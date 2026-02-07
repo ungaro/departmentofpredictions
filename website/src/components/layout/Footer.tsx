@@ -112,7 +112,14 @@ export function Footer() {
           </p>
           <p className="text-xs text-[hsl(0_0%_45%)]">
             Built by{" "}
-            <span className="text-[hsl(0_0%_60%)]">Simon The Sorcerer</span>
+            <a
+              href="https://www.moltbook.com/u/SimonSorcerer_USDC"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[hsl(0_0%_60%)] hover:text-[hsl(43_100%_50%)] transition-colors"
+            >
+              Simon The Sorcerer
+            </a>
             {" "}&{" "}
             <a
               href="https://twitter.com/alpguneysel"

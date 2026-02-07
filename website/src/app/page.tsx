@@ -662,6 +662,105 @@ export default function Home() {
           </Link>
         </div>
       </RevealSection>
+
+      {/* ── BUILT WITH ── */}
+      <RevealSection className="border-t border-[hsl(0_0%_8%)]">
+        <div className="container mx-auto px-6 py-16">
+          <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-[hsl(0_0%_25%)] text-center mb-10">
+            Built with
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-6">
+            {/* OpenClaw */}
+            <a
+              href="https://openclaw.ai/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex items-center gap-2.5 opacity-40 hover:opacity-80 transition-opacity"
+            >
+              <svg viewBox="0 0 24 24" className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 3c-2 2-3 5-2 8s3 5 5 6" />
+                <path d="M18 3c2 2 3 5 2 8s-3 5-5 6" />
+                <path d="M9 8c-1 1.5-1 3 0 4.5" />
+                <path d="M15 8c1 1.5 1 3 0 4.5" />
+                <path d="M12 14v4" />
+                <circle cx="12" cy="20" r="1.5" fill="currentColor" stroke="none" />
+              </svg>
+              <span className="font-mono text-xs text-white tracking-wide">OpenClaw</span>
+            </a>
+
+            <span className="text-[hsl(0_0%_12%)]">/</span>
+
+            {/* Kimi K2.5 */}
+            <a
+              href="https://kimi.ai"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex items-center gap-2.5 opacity-40 hover:opacity-80 transition-opacity"
+            >
+              <svg viewBox="0 0 24 24" className="w-5 h-5 text-white" fill="currentColor">
+                <path d="M6 4h3.5l5 7.5L20 4h3L15.5 14 23 24h-3l-5.5-8L9 24H6l7.5-10z" />
+              </svg>
+              <span className="font-mono text-xs text-white tracking-wide">Kimi K2.5</span>
+            </a>
+
+            <span className="text-[hsl(0_0%_12%)]">/</span>
+
+            {/* Claude Code */}
+            <a
+              href="https://claude.ai/code"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex items-center gap-2.5 opacity-40 hover:opacity-80 transition-opacity"
+            >
+              <svg viewBox="0 0 24 24" className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="4 17 10 11 4 5" />
+                <line x1="12" y1="19" x2="20" y2="19" />
+              </svg>
+              <span className="font-mono text-xs text-white tracking-wide">Claude Code <span className="text-[hsl(0_0%_50%)]">&amp; Opus 4.6</span></span>
+            </a>
+
+            <span className="text-[hsl(0_0%_12%)]">/</span>
+
+            {/* Google Veo & Nano */}
+            <a
+              href="https://deepmind.google"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex items-center gap-2.5 opacity-40 hover:opacity-80 transition-opacity"
+            >
+              <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none">
+                <circle cx="12" cy="12" r="4.5" stroke="white" strokeWidth={1.5} />
+                <circle cx="6" cy="6" r="1.5" fill="#4285F4" />
+                <circle cx="18" cy="6" r="1.5" fill="#EA4335" />
+                <circle cx="18" cy="18" r="1.5" fill="#FBBC05" />
+                <circle cx="6" cy="18" r="1.5" fill="#34A853" />
+              </svg>
+              <span className="font-mono text-xs text-white tracking-wide">
+                <span className="text-[hsl(0_0%_50%)]">Nano</span> &amp; <span className="text-[hsl(0_0%_50%)]">Veo 3.1</span>
+              </span>
+            </a>
+
+            <span className="text-[hsl(0_0%_12%)]">/</span>
+
+            {/* faster-whisper */}
+            <a
+              href="https://github.com/SYSTRAN/faster-whisper"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex items-center gap-2.5 opacity-40 hover:opacity-80 transition-opacity"
+            >
+              <svg viewBox="0 0 24 24" className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round">
+                <line x1="4" y1="8" x2="4" y2="16" />
+                <line x1="8" y1="5" x2="8" y2="19" />
+                <line x1="12" y1="3" x2="12" y2="21" />
+                <line x1="16" y1="6" x2="16" y2="18" />
+                <line x1="20" y1="9" x2="20" y2="15" />
+              </svg>
+              <span className="font-mono text-xs text-white tracking-wide">faster-whisper</span>
+            </a>
+          </div>
+        </div>
+      </RevealSection>
     </main>
   );
 }
