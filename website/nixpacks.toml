@@ -5,7 +5,7 @@ nixPkgs = ["nodejs_20", "npm-10_x"]
 cmds = ["npm i"]
 
 [phases.build]
-cmds = ["npm run build", "npm i -g serve"]
+cmds = ["npm run build"]
 
 [start]
-cmd = "serve dist -s -l tcp://0.0.0.0:3000"
+cmd = "npx serve dist -s -l tcp://0.0.0.0:3000"
