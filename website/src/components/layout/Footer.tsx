@@ -106,11 +106,25 @@ export function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <div className="mt-10 pt-6 border-t border-[hsl(0_0%_10%)] flex flex-col sm:flex-row items-center justify-between gap-2">
+        <div className="mt-10 pt-6 border-t border-[hsl(0_0%_10%)] flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-[hsl(0_0%_45%)]">
             USDC Agentic Hackathon 2026
           </p>
-          <p className="text-xs text-[hsl(0_0%_45%)]">Simon The Sorcerer</p>
+          <p className="text-xs text-[hsl(0_0%_45%)]">
+            Built by{" "}
+            <span className="text-[hsl(0_0%_60%)]">Simon The Sorcerer</span>
+            {" "}&{" "}
+            <a
+              href="https://twitter.com/alpguneysel"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[hsl(0_0%_60%)] hover:text-[hsl(43_100%_50%)] transition-colors"
+            >
+              Alp Guneysel
+            </a>
+            <span className="mx-1.5 text-[hsl(0_0%_20%)]">|</span>
+            Brooklyn, NY
+          </p>
         </div>
       </div>
     </footer>
