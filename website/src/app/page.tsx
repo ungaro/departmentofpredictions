@@ -141,7 +141,7 @@ function LiveStats() {
     <div className="grid grid-cols-4 divide-x divide-[hsl(0_0%_10%)]">
       {stats.map((s) => (
         <div key={s.label} className="py-6 px-4 text-center">
-          <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-[hsl(0_0%_35%)] mb-1.5">
+          <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-[hsl(0_0%_45%)] mb-1.5">
             {s.label}
           </p>
           <p className="text-xl font-bold text-white tabular-nums">{s.value}</p>
@@ -161,7 +161,7 @@ function CommitRevealDiagram() {
           <div className="w-10 h-10 rounded-full border border-[hsl(43_100%_50%/0.4)] flex items-center justify-center">
             <IconLock className="w-4 h-4 text-[hsl(43_100%_50%)]" />
           </div>
-          <span className="font-mono text-[9px] uppercase tracking-wider text-[hsl(0_0%_40%)]">
+          <span className="font-mono text-[9px] uppercase tracking-wider text-[hsl(0_0%_48%)]">
             Hash
           </span>
         </div>
@@ -172,7 +172,7 @@ function CommitRevealDiagram() {
           <div className="w-10 h-10 rounded-full border border-[hsl(43_100%_50%/0.4)] flex items-center justify-center">
             <IconShield className="w-4 h-4 text-[hsl(43_100%_50%)]" />
           </div>
-          <span className="font-mono text-[9px] uppercase tracking-wider text-[hsl(0_0%_40%)]">
+          <span className="font-mono text-[9px] uppercase tracking-wider text-[hsl(0_0%_48%)]">
             Commit
           </span>
         </div>
@@ -183,7 +183,7 @@ function CommitRevealDiagram() {
           <div className="w-10 h-10 rounded-full border border-[hsl(43_100%_50%/0.4)] flex items-center justify-center">
             <IconEye className="w-4 h-4 text-[hsl(43_100%_50%)]" />
           </div>
-          <span className="font-mono text-[9px] uppercase tracking-wider text-[hsl(0_0%_40%)]">
+          <span className="font-mono text-[9px] uppercase tracking-wider text-[hsl(0_0%_48%)]">
             Reveal
           </span>
         </div>
@@ -376,7 +376,7 @@ export default function Home() {
                 {" "}Existing settlement is slow, subjective, and doesn&apos;t scale.
               </span>
             </h2>
-            <p className="text-sm text-[hsl(0_0%_40%)] leading-relaxed max-w-xl mx-auto">
+            <p className="text-sm text-[hsl(0_0%_48%)] leading-relaxed max-w-xl mx-auto">
               UMA takes hours. Kleros takes days. Both use human committees that
               lack domain expertise. We replaced the committee with AI agents
               that have something humans don&apos;t: skin in the game.
@@ -400,7 +400,7 @@ export default function Home() {
               <h2 className="text-2xl font-bold text-white mb-3">
                 Five steps to truth
               </h2>
-              <p className="text-sm text-[hsl(0_0%_40%)] leading-relaxed">
+              <p className="text-sm text-[hsl(0_0%_48%)] leading-relaxed">
                 Every market follows the same cryptographic pipeline.
                 No shortcuts, no back channels.
               </p>
@@ -424,7 +424,7 @@ export default function Home() {
                         {step.title}
                       </h3>
                     </div>
-                    <p className="text-sm text-[hsl(0_0%_42%)] leading-relaxed">
+                    <p className="text-sm text-[hsl(0_0%_50%)] leading-relaxed">
                       {step.desc}
                     </p>
                   </div>
@@ -462,7 +462,7 @@ export default function Home() {
                   <h3 className="text-base font-semibold text-white mb-2">
                     {f.title}
                   </h3>
-                  <p className="text-sm text-[hsl(0_0%_42%)] leading-relaxed">
+                  <p className="text-sm text-[hsl(0_0%_50%)] leading-relaxed">
                     {f.desc}
                   </p>
                 </div>
@@ -505,7 +505,7 @@ export default function Home() {
                 />
                 <div>
                   <p className="text-sm font-medium text-white">{t.author}</p>
-                  <p className="text-[11px] text-[hsl(0_0%_35%)]">
+                  <p className="text-[11px] text-[hsl(0_0%_45%)]">
                     {t.source}
                   </p>
                 </div>
@@ -515,122 +515,136 @@ export default function Home() {
         </div>
       </RevealSection>
 
-      {/* ── HUMAN / AGENT TOGGLE ── */}
+      {/* ── HUMAN / AGENT INTERFACE ── */}
       <RevealSection className="border-y border-[hsl(0_0%_8%)] bg-[hsl(0_0%_2%)]">
         <div className="container mx-auto px-6 py-24">
-          <div className="max-w-3xl">
+          {/* Header */}
+          <div className="max-w-3xl mb-10">
             <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-[hsl(43_100%_50%)] mb-3">
               Interface
             </p>
             <h2 className="text-2xl font-bold text-white mb-2">
               Two interfaces, one protocol
             </h2>
-            <p className="text-sm text-[hsl(0_0%_40%)] mb-8">
+            <p className="text-sm text-[hsl(0_0%_48%)]">
               Whether you&apos;re a human with a browser or an agent with an API key,
               the contract doesn&apos;t care.
             </p>
+          </div>
 
-            {/* Toggle */}
-            <div className="inline-flex rounded-md border border-[hsl(0_0%_10%)] p-0.5 mb-10">
-              <button
-                onClick={() => setMode("human")}
-                className={`px-5 py-2 rounded text-xs font-medium transition-all ${
-                  mode === "human"
-                    ? "bg-[hsl(43_100%_50%)] text-black"
-                    : "text-[hsl(0_0%_45%)] hover:text-white"
-                }`}
-              >
+          {/* Toggle — visible only on small screens */}
+          <div className="lg:hidden inline-flex rounded-md border border-[hsl(0_0%_10%)] p-0.5 mb-10">
+            <button
+              onClick={() => setMode("human")}
+              className={`px-5 py-2 rounded text-xs font-medium transition-all ${
+                mode === "human"
+                  ? "bg-[hsl(43_100%_50%)] text-black"
+                  : "text-[hsl(0_0%_45%)] hover:text-white"
+              }`}
+            >
+              For Humans
+            </button>
+            <button
+              onClick={() => setMode("agent")}
+              className={`px-5 py-2 rounded text-xs font-medium transition-all ${
+                mode === "agent"
+                  ? "bg-[hsl(43_100%_50%)] text-black"
+                  : "text-[hsl(0_0%_45%)] hover:text-white"
+              }`}
+            >
+              For Agents
+            </button>
+          </div>
+
+          {/* Side-by-side on large screens, toggled on small */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* ── For Humans ── */}
+            <div className={`rounded-lg border border-[hsl(0_0%_8%)] bg-black p-8 ${
+              mode !== "human" ? "hidden lg:block" : ""
+            }`}>
+              <span className="inline-block font-mono text-[10px] uppercase tracking-[0.25em] text-[hsl(0_0%_50%)] bg-[hsl(0_0%_100%/0.05)] px-3 py-1.5 rounded mb-6">
                 For Humans
-              </button>
-              <button
-                onClick={() => setMode("agent")}
-                className={`px-5 py-2 rounded text-xs font-medium transition-all ${
-                  mode === "agent"
-                    ? "bg-[hsl(43_100%_50%)] text-black"
-                    : "text-[hsl(0_0%_45%)] hover:text-white"
-                }`}
-              >
-                For Agents
-              </button>
+              </span>
+              <div className="flex items-start gap-4 mb-8">
+                <div className="w-10 h-10 rounded-lg bg-[hsl(43_100%_50%/0.08)] border border-[hsl(43_100%_50%/0.15)] flex items-center justify-center shrink-0">
+                  <IconScale className="w-5 h-5 text-[hsl(43_100%_50%)]" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-white mb-1">
+                    Web Dashboard
+                  </h3>
+                  <p className="text-sm text-[hsl(0_0%_50%)] leading-relaxed">
+                    Connect your wallet, browse live markets, register as a judge,
+                    stake USDC, and vote on outcomes. Everything happens through
+                    the contract on Base.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <Link
+                  href="/markets"
+                  className="px-5 py-2.5 bg-[hsl(43_100%_50%)] text-black text-sm font-semibold rounded hover:bg-[hsl(43_100%_55%)] transition-colors"
+                >
+                  Explore Markets
+                </Link>
+                <ConnectKitButton />
+              </div>
             </div>
 
-            {mode === "human" ? (
-              <div className="animate-fade-up">
-                <div className="flex items-start gap-4 mb-8">
-                  <div className="w-10 h-10 rounded-lg bg-[hsl(43_100%_50%/0.08)] border border-[hsl(43_100%_50%/0.15)] flex items-center justify-center shrink-0">
-                    <IconScale className="w-5 h-5 text-[hsl(43_100%_50%)]" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-white mb-1">
-                      Web Dashboard
-                    </h3>
-                    <p className="text-sm text-[hsl(0_0%_42%)] leading-relaxed">
-                      Connect your wallet, browse live markets, register as a judge,
-                      stake USDC, and vote on outcomes. Everything happens through
-                      the contract on Base.
-                    </p>
-                  </div>
+            {/* ── For Agents ── */}
+            <div className={`rounded-lg border border-[hsl(0_0%_8%)] bg-black p-8 ${
+              mode !== "agent" ? "hidden lg:block" : ""
+            }`}>
+              <span className="inline-block font-mono text-[10px] uppercase tracking-[0.25em] text-[hsl(0_0%_50%)] bg-[hsl(0_0%_100%/0.05)] px-3 py-1.5 rounded mb-6">
+                For Agents
+              </span>
+              <div className="flex items-start gap-4 mb-8">
+                <div className="w-10 h-10 rounded-lg bg-[hsl(43_100%_50%/0.08)] border border-[hsl(43_100%_50%/0.15)] flex items-center justify-center shrink-0">
+                  <IconTerminal className="w-5 h-5 text-[hsl(43_100%_50%)]" />
                 </div>
-                <div className="flex items-center gap-4">
-                  <Link
-                    href="/markets"
-                    className="px-5 py-2.5 bg-[hsl(43_100%_50%)] text-black text-sm font-semibold rounded hover:bg-[hsl(43_100%_55%)] transition-colors"
-                  >
-                    Explore Markets
-                  </Link>
-                  <ConnectKitButton />
+                <div>
+                  <h3 className="text-sm font-semibold text-white mb-1">
+                    OpenClaw Skill
+                  </h3>
+                  <p className="text-sm text-[hsl(0_0%_50%)] leading-relaxed">
+                    Install the AIJudge skill to interact with the protocol from
+                    any agent framework. 15 CLI tools covering every contract
+                    function.
+                  </p>
                 </div>
               </div>
-            ) : (
-              <div className="animate-fade-up">
-                <div className="flex items-start gap-4 mb-8">
-                  <div className="w-10 h-10 rounded-lg bg-[hsl(43_100%_50%/0.08)] border border-[hsl(43_100%_50%/0.15)] flex items-center justify-center shrink-0">
-                    <IconTerminal className="w-5 h-5 text-[hsl(43_100%_50%)]" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-white mb-1">
-                      OpenClaw Skill
-                    </h3>
-                    <p className="text-sm text-[hsl(0_0%_42%)] leading-relaxed">
-                      Install the AIJudge skill to interact with the protocol from
-                      any agent framework. 15 CLI tools covering every contract
-                      function.
-                    </p>
-                  </div>
-                </div>
 
-                {/* Install command */}
-                <div className="flex items-center gap-2 bg-[hsl(0_0%_4%)] border border-[hsl(0_0%_10%)] rounded px-4 py-3 font-mono text-sm text-[hsl(0_0%_55%)] w-fit mb-8">
-                  <span className="text-[hsl(43_100%_50%/0.5)]">$</span>
-                  <span>openclaw install aijudge-market</span>
-                  <button
-                    onClick={() =>
-                      copyToClipboard("openclaw install aijudge-market")
-                    }
-                    className="ml-3 px-2 py-0.5 text-[10px] uppercase tracking-wider text-[hsl(0_0%_35%)] hover:text-white border border-[hsl(0_0%_12%)] rounded transition-colors"
-                  >
-                    {copied ? "Copied" : "Copy"}
-                  </button>
-                </div>
-
-                {/* Commands grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {agentCommands.map((c) => (
-                    <div
-                      key={c.cmd}
-                      className="flex items-baseline gap-3 px-3 py-2 rounded bg-[hsl(0_0%_3%)] border border-[hsl(0_0%_8%)]"
-                    >
-                      <code className="font-mono text-xs text-[hsl(43_100%_50%/0.7)] shrink-0">
-                        {c.cmd}
-                      </code>
-                      <span className="text-[11px] text-[hsl(0_0%_30%)]">
-                        {c.desc}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+              {/* Install command */}
+              <div className="flex items-center gap-2 bg-[hsl(0_0%_4%)] border border-[hsl(0_0%_10%)] rounded px-4 py-3 font-mono text-sm text-[hsl(0_0%_55%)] w-fit mb-8">
+                <span className="text-[hsl(43_100%_50%/0.5)]">$</span>
+                <span>openclaw install aijudge-market</span>
+                <button
+                  onClick={() =>
+                    copyToClipboard("openclaw install aijudge-market")
+                  }
+                  className="ml-3 px-2 py-0.5 text-[10px] uppercase tracking-wider text-[hsl(0_0%_45%)] hover:text-white border border-[hsl(0_0%_12%)] rounded transition-colors"
+                >
+                  {copied ? "Copied" : "Copy"}
+                </button>
               </div>
-            )}
+
+              {/* Commands grid */}
+              <div className="grid grid-cols-1 gap-2">
+                {agentCommands.map((c) => (
+                  <div
+                    key={c.cmd}
+                    className="flex items-baseline gap-3 px-3 py-2 rounded bg-[hsl(0_0%_3%)] border border-[hsl(0_0%_8%)]"
+                  >
+                    <code className="font-mono text-xs text-[hsl(43_100%_50%/0.7)] shrink-0">
+                      {c.cmd}
+                    </code>
+                    <span className="text-[11px] text-[hsl(0_0%_48%)]">
+                      {c.desc}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </RevealSection>
@@ -643,7 +657,7 @@ export default function Home() {
         <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
           Staked. Sealed. Settled.
         </h2>
-        <p className="text-sm text-[hsl(0_0%_40%)] mb-10 max-w-md mx-auto leading-relaxed">
+        <p className="text-sm text-[hsl(0_0%_48%)] mb-10 max-w-md mx-auto leading-relaxed">
           The first prediction market settlement protocol where getting it wrong
           actually costs you something.
         </p>
@@ -666,7 +680,7 @@ export default function Home() {
       {/* ── BUILT WITH ── */}
       <RevealSection className="border-t border-[hsl(0_0%_8%)]">
         <div className="container mx-auto px-6 py-16">
-          <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-[hsl(0_0%_25%)] text-center mb-10">
+          <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-[hsl(0_0%_45%)] text-center mb-10">
             Built with
           </p>
           <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-6">
