@@ -1,0 +1,46 @@
+{
+  "name": "aijudge-ecosystem",
+  "version": "1.0.0",
+  "description": "AIJudgeMarket + CircleX402 Skill - USDC Hackathon 2026",
+  "private": true,
+  "workspaces": [
+    "contracts",
+    "skills/*"
+  ],
+  "scripts": {
+    "install:contracts": "cd contracts && forge install",
+    "build:contracts": "cd contracts && forge build",
+    "test:contracts": "cd contracts && forge test",
+    "deploy:base": "cd contracts && forge script script/DeployV2.s.sol --rpc-url https://sepolia.base.org --broadcast",
+    "deploy:arc": "cd contracts && NETWORK=arc-testnet forge script script/DeployV2.s.sol --rpc-url https://rpc.testnet.arc.network --broadcast",
+    "skills:aijudge": "cd skills/aijudge-market && python3",
+    "skills:x402": "cd skills/circlex402-skill && python3 main.py",
+    "format": "forge fmt && prettier --write '**/*.md'",
+    "lint": "forge fmt --check",
+    "clean": "rm -rf contracts/out contracts/cache contracts/broadcast"
+  },
+  "devDependencies": {
+    "prettier": "^3.0.0",
+    "prettier-plugin-solidity": "^1.3.0"
+  },
+  "keywords": [
+    "ethereum",
+    "solidity",
+    "prediction-markets",
+    "oracle",
+    "usdc",
+    "cctp",
+    "ai",
+    "hackathon"
+  ],
+  "author": "Simon The Sorcerer (@ungaro)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ungaro/aijudge-ecosystem"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}

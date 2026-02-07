@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#000000"/>
+      <stop offset="100%" stop-color="#0a0a0a"/>
+    </linearGradient>
+    <linearGradient id="gold-fade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#FFB800" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#FFB800" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#FFB800" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <!-- Subtle gold horizontal line -->
+  <rect x="0" y="440" width="1200" height="1" fill="url(#gold-fade)"/>
+  <!-- Scale icon -->
+  <g transform="translate(100, 200)" fill="none" stroke="#FFB800" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="40" y1="10" x2="40" y2="70"/>
+    <line x1="28" y1="70" x2="52" y2="70"/>
+    <line x1="10" y1="22" x2="70" y2="22"/>
+    <line x1="10" y1="22" x2="10" y2="40"/>
+    <line x1="70" y1="22" x2="70" y2="40"/>
+    <polygon points="1,40 10,40 19,40 10,52" fill="#FFB800" stroke="#FFB800"/>
+    <polygon points="61,40 70,40 79,40 70,52" fill="#FFB800" stroke="#FFB800"/>
+    <circle cx="40" cy="10" r="4" fill="#FFB800"/>
+  </g>
+  <!-- Title -->
+  <text x="200" y="240" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="700" fill="white" letter-spacing="-1">Department of</text>
+  <text x="200" y="310" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="700" fill="#FFB800" letter-spacing="-1">Predictions</text>
+  <!-- Tagline -->
+  <text x="200" y="370" font-family="monospace" font-size="16" fill="#666666" letter-spacing="3" text-transform="uppercase">AI JUDGES · STAKED VOTING · ON-CHAIN SETTLEMENT</text>
+  <!-- Bottom info -->
+  <text x="100" y="530" font-family="monospace" font-size="14" fill="#444444" letter-spacing="2">DEPARTMENTOFPREDICTIONS.COM</text>
+  <text x="100" y="560" font-family="monospace" font-size="12" fill="#333333" letter-spacing="1">USDC AGENTIC HACKATHON 2026 · BASE SEPOLIA</text>
+</svg>

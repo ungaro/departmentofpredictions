@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" fill="none">
+  <!-- Top finial circle -->
+  <circle cx="16" cy="4" r="2.5" fill="#FFB800"/>
+  <!-- Horizontal beam -->
+  <rect x="3" y="6.5" width="26" height="2" rx="1" fill="#FFB800"/>
+  <!-- Central pillar -->
+  <rect x="14.75" y="6" width="2.5" height="18" rx="1" fill="#FFB800"/>
+  <!-- Left chain -->
+  <line x1="5" y1="8.5" x2="5" y2="15" stroke="#FFB800" stroke-width="1.8" stroke-linecap="round"/>
+  <!-- Right chain -->
+  <line x1="27" y1="8.5" x2="27" y2="15" stroke="#FFB800" stroke-width="1.8" stroke-linecap="round"/>
+  <!-- Left pan (bowl shape) -->
+  <path d="M0.5 15 L9.5 15 L8 19.5 C6.5 21 3.5 21 2 19.5 Z" fill="#FFB800"/>
+  <!-- Right pan (bowl shape) -->
+  <path d="M22.5 15 L31.5 15 L30 19.5 C28.5 21 25.5 21 24 19.5 Z" fill="#FFB800"/>
+  <!-- Base pedestal -->
+  <path d="M13 24 L19 24 L20 27 L12 27 Z" fill="#FFB800"/>
+  <!-- Base platform -->
+  <rect x="9.5" y="27" width="13" height="2.5" rx="1" fill="#FFB800"/>
+</svg>

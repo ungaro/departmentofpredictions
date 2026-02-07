@@ -1,0 +1,12 @@
+[package]
+name = "aijudge-ai-analysis"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+sp1-zkvm = { git = "https://github.com/succinctlabs/sp1", tag = "v4.0.0" }
+serde = { version = "1.0", default-features = false, features = ["alloc"] }
+serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
+
+[features]
+default = []
