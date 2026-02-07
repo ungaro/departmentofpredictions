@@ -1,0 +1,11 @@
+[phases.setup]
+nixPkgs = ["nodejs_20", "npm-10_x"]
+
+[phases.install]
+cmds = ["npm i"]
+
+[phases.build]
+cmds = ["npm run build", "npm i -g serve"]
+
+[start]
+cmd = "serve dist -s -l tcp://0.0.0.0:3000"
