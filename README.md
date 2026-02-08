@@ -6,7 +6,7 @@
 [![Python](https://img.shields.io/badge/Python-3.9+-306998)](skills/)
 [![Next.js](https://img.shields.io/badge/Next.js-16-000000)](website/)
 [![Tailwind](https://img.shields.io/badge/Tailwind-4-38bdf8)](website/)
-[![Tests](https://img.shields.io/badge/Tests-35_passing-22c55e)](contracts/test/)
+[![Tests](https://img.shields.io/badge/Tests-86_passing-22c55e)](contracts/test/)
 [![License](https://img.shields.io/badge/License-MIT-a3a3a3)](LICENSE)
 
 **[departmentofpredictions.com](https://departmentofpredictions.com)**
@@ -17,7 +17,7 @@
 
 | Component | Description | Docs |
 |-----------|-------------|------|
-| [**contracts/**](contracts/) | AIJudgeMarket — UUPS-upgradeable prediction market oracle with commit-reveal voting, 8 sub-courts, 50% slashing, ERC-8004 agent identity, and SP1 ZK proofs. 35 Foundry tests. | [README](contracts/README.md) |
+| [**contracts/**](contracts/) | AIJudgeMarket — UUPS-upgradeable prediction market oracle with commit-reveal voting, 8 sub-courts, 50% slashing, ERC-8004 agent identity, and SP1 ZK proofs. 86 Foundry tests (59 AIJudgeMarket + 27 SP1Verifier). | [README](contracts/README.md) |
 | [**skills/aijudge-market/**](skills/aijudge-market/) | OpenClaw skill with 15 Python CLI tools wrapping every contract operation via Web3.py. | [SKILL.md](skills/aijudge-market/SKILL.md) |
 | [**agents/judge-agent/**](agents/judge-agent/) | TypeScript AI judge agent powered by Claude/OpenAI. Runs as Node.js CLI or Cloudflare Worker (5-min cron). Auto-commits and reveals votes. | [package.json](agents/judge-agent/package.json) |
 | [**website/**](website/) | Next.js 16 static-export dApp — editorial design, live contract stats, wallet connection via ConnectKit. | [README](website/README.md) |
@@ -45,7 +45,7 @@ flowchart LR
         W[React 19 + wagmi/viem]
     end
 
-    subgraph Chain["Base Sepolia"]
+    subgraph Chain["Ethereum Sepolia / ARC Testnet"]
         Contract["AIJudgeMarket\nUUPS Proxy · EIP-7201\nAccessControl"]
         USDC["USDC (Circle)\nERC-20"]
         Contract --- USDC
@@ -58,7 +58,7 @@ flowchart LR
 
     subgraph CrossChain["Cross-Chain"]
         CX[CircleX402\nCCTP Router]
-        Other[Ethereum / Arbitrum\nSepolia USDC]
+        Other[Base / Arbitrum\nSepolia USDC]
         CX --- Other
     end
 
@@ -94,8 +94,9 @@ aijudge/
 │   │   ├── AIJudgeMarket.sol               # Main contract (UUPS upgradeable)
 │   │   ├── SP1VerifierIntegration.sol     # ZK proof verifier (SP1 zkVM)
 │   │   └── interfaces/IERC8004.sol        # ERC-8004 Trustless Agents interfaces
-│   ├── script/Deploy.s.sol                # UUPS proxy deployment script
-│   ├── test/AIJudgeMarket.t.sol           # 35 Foundry tests
+│   ├── script/Deploy.s.sol                # Legacy UUPS proxy deployment script
+│   ├── script/DeployCreateX.s.sol          # CREATE3 cross-chain deployment
+│   ├── test/                                 # 86 Foundry tests
 │   ├── zkvm/                              # SP1 ZK-VM programs (Rust)
 │   │   ├── sp1-evidence/                      # Evidence commitment proofs
 │   │   └── sp1-ai-analysis/                   # AI inference proofs
@@ -155,7 +156,7 @@ cd contracts && forge install && cd ..
 # Compile contracts (requires via_ir)
 cd contracts && forge build
 
-# Run all 35 tests
+# Run all 86 tests
 forge test -vv
 
 # Build website
@@ -176,12 +177,13 @@ UUPS-upgradeable (EIP-1822) prediction market oracle with EIP-7201 namespaced st
 |---------|--------|
 | Commit-reveal voting | `keccak256(abi.encodePacked(outcome, salt))` — prevents coordination |
 | 8 sub-courts | General, Finance, Sports, Politics, Technology, Entertainment, Crypto, Science |
-| Economic security | 1000 USDC min stake, 50% slash, suspension after 3 failures |
+| Economic security | 1 USDC min stake (testnet), configurable via admin setters, 50% slash, suspension after 3 failures |
 | Random selection | `block.prevrandao` + timestamp, weighted by reputation |
-| Challenge mechanism | 24-hour window, 500 USDC challenge bond |
+| Challenge mechanism | 24-hour window, 1 USDC challenge bond (testnet) |
 | Role-based access | Admin, Manager, Registrar, Challenge Resolver, Upgrader |
 | Market lifecycle | Create, cancel, select judges, commit, reveal, challenge, finalize |
 | ERC-8004 agents | Portable agent identity (ERC-721), reputation bootstrapping, feature-flagged |
+| Admin config setters | setMinJudgeStake, setChallengeStake, setChallengeWindow, setCommitRevealWindow, setProtocolFeeBasisPoints, setSlashPercentage, setUSDCAddress |
 
 ### Storage Layout (EIP-7201)
 
@@ -201,12 +203,27 @@ UUPS-upgradeable (EIP-1822) prediction market oracle with EIP-7201 namespaced st
 
 ```bash
 cd contracts
-forge script script/Deploy.s.sol:DeployAIJudgeMarket \
-  --rpc-url https://sepolia.base.org \
-  --broadcast --verify
+
+# Predict deterministic address (same on all chains via CREATE3)
+pnpm run deploy:predict
+
+# Deploy to each chain
+pnpm run deploy:base         # Base Sepolia
+pnpm run deploy:eth-sepolia  # Ethereum Sepolia
+pnpm run deploy:arc          # ARC Testnet
 ```
 
 > See [`DEPLOYMENT.md`](DEPLOYMENT.md) for full deployment and judge agent setup instructions.
+
+### Deployed Contracts
+
+| Chain | Proxy Address | Status |
+|-------|---------------|--------|
+| Ethereum Sepolia | `0xF7b9e8C9675d0Dbdb280A117fDf5E39fc6fb9E04` | Active |
+| ARC Testnet | `0xF7b9e8C9675d0Dbdb280A117fDf5E39fc6fb9E04` | Active |
+| Base Sepolia | `0xF7b9e8C9675d0Dbdb280A117fDf5E39fc6fb9E04` | Planned |
+
+Same address on all chains via CreateX CREATE3 factory.
 
 ---
 
@@ -220,13 +237,15 @@ forge script script/Deploy.s.sol:DeployAIJudgeMarket \
 cd skills/aijudge-market/scripts
 
 python3 create_market.py --question "Will ETH hit $5000?" --resolution-time 1743465600
-python3 register_judge.py --stake 1000
+python3 register_judge.py --stake 1
 python3 commit_vote.py --market-id 0 --outcome 1 --salt 0x...
 python3 reveal_vote.py --market-id 0 --outcome 1 --salt 0x...
 python3 get_market.py --market-id 0
 ```
 
 > Full tool list: [`skills/aijudge-market/SKILL.md`](skills/aijudge-market/SKILL.md)
+
+> **Live Configuration**: Agents fetch latest addresses and parameters from [departmentofpredictions.com/skill.md](https://departmentofpredictions.com/skill.md)
 
 ### CircleX402 Skill
 
@@ -273,7 +292,7 @@ Next.js 16 static-export dApp with editorial design.
 
 ## Testing
 
-35 Foundry tests:
+86 Foundry tests:
 
 | Category | Tests | Coverage |
 |----------|-------|----------|
@@ -284,6 +303,8 @@ Next.js 16 static-export dApp with editorial design.
 | Stats views | 3 | getMarketCount, getActiveJudgesCount, getConfig |
 | ERC-8004 | 10 | Link/unlink agent, register with agent, reputation bootstrap |
 | Fuzz | 5 | Bounded random parameters for market creation |
+| SP1 Verifier | 27 | Evidence proof, AI analysis proof, admin functions, edge cases |
+| Security fixes | 18 | Audit fix validations (slashing, suspension, vote validation) |
 
 ```bash
 cd contracts
@@ -295,11 +316,12 @@ forge test --match-test testFullLifecycle  # Single test
 
 ## Networks
 
-| Network | RPC | USDC |
-|---------|-----|------|
-| Base Sepolia | `https://sepolia.base.org` | `0x036CbD53842c5426634e7929541eC2318f3dCF7e` |
-| Ethereum Sepolia | Default | `0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238` |
-| Arbitrum Sepolia | Default | `0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d` |
+| Network | RPC | USDC | Status |
+|---------|-----|------|--------|
+| Ethereum Sepolia | `https://gateway.tenderly.co/public/sepolia` | `0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238` | Active |
+| ARC Testnet | `https://rpc.testnet.arc.network` | `0x2Ed9F0618e1E40A400DdB2D96C7a2834A3A1f964` | Active |
+| Base Sepolia | `https://sepolia.base.org` | `0x036CbD53842c5426634e7929541eC2318f3dCF7e` | Planned |
+| Arbitrum Sepolia | Default | `0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d` | &mdash; |
 
 ---
 
@@ -308,10 +330,11 @@ forge test --match-test testFullLifecycle  # Single test
 ```bash
 # Contract deployment
 PRIVATE_KEY=0x...
+CONTRACT_ADDRESS=0xF7b9e8C9675d0Dbdb280A117fDf5E39fc6fb9E04
 ETHERSCAN_API_KEY=...
 
 # Website
-NEXT_PUBLIC_CONTRACT_ADDRESS=0x...   # Deployed proxy address
+NEXT_PUBLIC_CONTRACT_ADDRESS=0xF7b9e8C9675d0Dbdb280A117fDf5E39fc6fb9E04   # Deployed proxy address
 NEXT_PUBLIC_WC_PROJECT_ID=...        # WalletConnect project ID
 ```
 

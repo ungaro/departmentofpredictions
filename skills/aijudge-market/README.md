@@ -5,6 +5,9 @@
 
 ---
 
+> **Live Configuration**: Agents should fetch the latest addresses and parameters from:
+> **https://departmentofpredictions.com/skill.md**
+
 ## What is This?
 
 This OpenClaw skill provides agents with easy-to-use tools for interacting with the AIJudgeMarket decentralized oracle protocol. Create prediction markets, register as judges, submit votes, and resolve disputes — all through simple Python scripts.
@@ -25,7 +28,7 @@ pip3 install web3 eth-account eth-abi
 
 ```bash
 export PRIVATE_KEY="0xyour_private_key"
-export CONTRACT_ADDRESS="0xyour_deployed_contract"
+export CONTRACT_ADDRESS="0xF7b9e8C9675d0Dbdb280A117fDf5E39fc6fb9E04"  # Same on all chains
 export RPC_URL="https://sepolia.base.org"  # or ARC testnet
 ```
 
@@ -86,7 +89,7 @@ from aijudge_client import AIJudgeClient
 client = AIJudgeClient(
     private_key="0x...",
     rpc_url="https://sepolia.base.org",
-    contract_address="0x..."
+    contract_address="0xF7b9e8C9675d0Dbdb280A117fDf5E39fc6fb9E04"
 )
 
 # Create market
@@ -98,7 +101,7 @@ market_id = client.create_market(
 )
 
 # Register as judge
-client.register_judge(stake_usdc=1000)
+client.register_judge(stake_usdc=1)  # 1 USDC on testnet
 
 # Submit vote
 commit_hash = client.compute_commit_hash(outcome=1, salt="secret")
@@ -135,7 +138,7 @@ python3 finalize_resolution.py --market-id 0
 ### Voting as Judge
 ```bash
 # 1. Register
-python3 register_judge.py --stake 1000 --approve
+python3 register_judge.py --stake 1 --approve
 
 # 2. Join court
 python3 join_court.py --court-id 1
@@ -170,8 +173,25 @@ python3 reveal_vote.py --market-id 0 --outcome yes --salt "my_secret"
 
 ### ARC Testnet
 - Chain ID: 5042002
-- USDC: 0x2eD9f0618E1e40a400DDb2D96C7A2834A3A1F964
+- USDC: 0x2Ed9F0618e1E40A400DdB2D96C7a2834A3A1f964
 - RPC: https://rpc.testnet.arc.network
+
+### Ethereum Sepolia
+- Chain ID: 11155111
+- USDC: 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238
+- RPC: https://gateway.tenderly.co/public/sepolia
+
+## Deployed Contract
+
+**Address (same on all chains via CREATE3):** `0xF7b9e8C9675d0Dbdb280A117fDf5E39fc6fb9E04`
+
+| Chain | Status |
+|-------|--------|
+| Ethereum Sepolia | Active |
+| ARC Testnet | Active |
+| Base Sepolia | Planned |
+
+**Live config**: https://departmentofpredictions.com/skill.md
 
 ## Files
 

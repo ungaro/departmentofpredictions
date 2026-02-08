@@ -52,6 +52,12 @@ export function Footer() {
                   Judge
                 </Link>
                 <Link
+                  href="/docs"
+                  className="text-sm text-[hsl(0_0%_45%)] hover:text-[hsl(0_0%_93%)] transition-colors"
+                >
+                  Docs
+                </Link>
+                <Link
                   href="/about"
                   className="text-sm text-[hsl(0_0%_45%)] hover:text-[hsl(0_0%_93%)] transition-colors"
                 >

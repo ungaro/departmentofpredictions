@@ -5,7 +5,7 @@
 
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.20-blue)](https://soliditylang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-35_passing-orange)](https://book.getfoundry.sh/)
+[![Tests](https://img.shields.io/badge/Tests-86_passing-orange)](https://book.getfoundry.sh/)
 
 ---
 
@@ -67,7 +67,7 @@ flowchart TB
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Registration: Stake 1000+ USDC
+    [*] --> Registration: Stake 1+ USDC
     Registration --> Active: Registration Complete
     
     Active --> Selected: Random Selection
@@ -149,7 +149,7 @@ sequenceDiagram
 ```mermaid
 flowchart LR
     subgraph Layer1["Economic Security"]
-        A[1000 USDC Stake]
+        A[1 USDC Stake (testnet)]
         B[50% Slashing]
     end
     
@@ -179,10 +179,10 @@ flowchart LR
 | Attack Vector | Mitigation |
 |--------------|------------|
 | **Collusion** | Random selection + commit-reveal prevents coordination |
-| **Sybil Attack** | 1000 USDC stake per judge raises attack cost |
+| **Sybil Attack** | 1 USDC stake per judge (testnet, configurable) raises attack cost |
 | **Copycat Voting** | Commit-reveal: can't see others' votes before committing |
 | **Herd Behavior** | Minority bonus rewards independent thinking |
-| **Spam Challenges** | 1000 USDC challenge bond prevents frivolous disputes |
+| **Spam Challenges** | 1 USDC challenge bond (testnet, configurable) prevents frivolous disputes |
 | **Tie Votes** | requiredJudges must be odd (3, 5, 7, ...) |
 | **Ghost Judges** | Suspended judges removed from active list, selection verifies Active status |
 | **Stake Escape** | Judges can't deregister while assigned to unresolved markets |
@@ -214,6 +214,8 @@ flowchart LR
 | **ERC-8004 Agents** | Trustless agent identity, reputation bootstrapping (feature-flagged) | ✅ |
 | **Odd Judge Requirement** | requiredJudges must be odd (prevents ties) | ✅ |
 | **Deregistration Guard** | Judges can't deregister with active markets | ✅ |
+| **Admin Config Setters** | 7 setters for all protocol parameters (stake, fees, windows) | ✅ |
+| **CREATE3 Cross-Chain Deploy** | Same proxy address on all chains via CreateX | ✅ |
 
 ---
 
@@ -336,13 +338,15 @@ flowchart TB
 
 | Parameter | Value | Description |
 |-----------|-------|-------------|
-| `minJudgeStake` | 1000 USDC | Minimum stake to register as judge |
+| `minJudgeStake` | 1 USDC (testnet, configurable via `setMinJudgeStake`) | Minimum stake to register as judge |
 | `slashPercentage` | 5000 (50%) | Amount slashed for incorrect votes |
 | `challengeWindow` | 24 hours | Time to challenge a resolution |
 | `commitRevealWindow` | 12 hours | Time to reveal after commit |
-| `challengeStake` | 1000 USDC | Bond required to challenge |
+| `challengeStake` | 1 USDC (testnet, configurable via `setChallengeStake`) | Bond required to challenge |
 | `minorityBonusBasisPoints` | 2500 (25%) | Reputation boost for correct minority |
 | `maxFailedResolutions` | 3 | Max failures before suspension |
+
+All parameters are configurable by `DEFAULT_ADMIN_ROLE` via admin setters: `setMinJudgeStake`, `setChallengeStake`, `setChallengeWindow`, `setCommitRevealWindow`, `setProtocolFeeBasisPoints`, `setSlashPercentage`, `setUSDCAddress`.
 
 ---
 
@@ -424,8 +428,9 @@ uint256 marketId = market.createMarket(
 
 ### Supported Networks
 
-- **Base Sepolia** (Chain ID: 84532)
-- **ARC Testnet** (Chain ID: 5042002) — Circle's testnet
+- **Ethereum Sepolia** (Chain ID: 11155111) — Active
+- **ARC Testnet** (Chain ID: 5042002) — Active
+- **Base Sepolia** (Chain ID: 84532) — Planned
 
 ### Deployment Steps
 
@@ -436,17 +441,23 @@ forge install
 # 2. Set environment variables
 export PRIVATE_KEY=0xYOUR_PRIVATE_KEY
 
-# 3. Deploy (implementation + UUPS proxy in one script)
-forge script script/Deploy.s.sol:DeployAIJudgeMarket \
-  --rpc-url https://sepolia.base.org \
-  --broadcast \
-  --verify \
-  -vvv
-
-# Output:
-#   Implementation: 0x...
-#   Proxy (USE THIS ADDRESS): 0x...
+# 3. Deploy via CREATE3 (same address on all chains)
+pnpm run deploy:predict         # Preview address
+pnpm run deploy:eth-sepolia     # Ethereum Sepolia
+pnpm run deploy:arc             # ARC Testnet
+pnpm run deploy:base            # Base Sepolia
 ```
+
+### Deployed Contracts
+
+| Chain | Proxy Address | Implementation |
+|-------|---------------|----------------|
+| Ethereum Sepolia | `0xF7b9e8C9675d0Dbdb280A117fDf5E39fc6fb9E04` | `0xE68721856C148172002F994d568A9fa941F38599` |
+| ARC Testnet | `0xF7b9e8C9675d0Dbdb280A117fDf5E39fc6fb9E04` | `0xE68721856C148172002F994d568A9fa941F38599` |
+
+Admin: `0xA34FB3bD384066a4804cB296B9a5FDF0Ec27Faf3`
+
+Same proxy address on all chains via [CreateX](https://createx.rocks) CREATE3 factory.
 
 ### Post-Deployment Role Setup
 
@@ -473,7 +484,7 @@ cast send $CONTRACT "grantRole(bytes32,address)" \
 
 ## 🧪 Testing
 
-35 tests in 1 test suite.
+86 tests in 2 test suites (59 AIJudgeMarket + 27 SP1Verifier).
 
 ```bash
 # Run all tests
@@ -501,6 +512,7 @@ forge test --match-contract AIJudgeMarketTest -vv
 | Challenge flow | 3 | Challenge, resolve, finalize |
 | Fuzz | 1 | Random market creation parameters |
 | Security audit | 5 | Suspension removal, deregistration guard, vote validation |
+| SP1 Verifier | 27 | Evidence proofs, AI analysis proofs, admin functions, edge cases |
 
 ---
 
@@ -595,7 +607,7 @@ market.setERC8004Enabled(true);
 |---------|--------------|-----|--------|
 | Resolution Time | Hours/minutes | 2-48 hours | Days/weeks |
 | Cost | Low (AI) | Medium | High (humans) |
-| Token Required | No (USDC) | Yes (UMA) | Yes (PNK) |
+| Token Required | USDC only (no governance token) | Yes (UMA) | Yes (PNK) |
 | Slashing | 50% | Variable | Variable |
 | Random Selection | ✅ | ❌ | ✅ |
 | Commit-Reveal | ✅ | ❌ | ❌ |
@@ -649,6 +661,13 @@ flowchart TB
     D -->|Submit Proof| E
     E --> G -->|Yes| F
 ```
+
+### SP1 Verifier Addresses
+
+| Verifier | Address | Networks |
+|----------|---------|----------|
+| **Groth16 Gateway** (recommended) | `0x397A5f7f3dBd538f23DE225B51f532c34448dA9B` | Sepolia, Base Sepolia, all mainnets |
+| **PLONK Gateway** | `0x3B6041173B80E77f038f3F2C0f9744f04837185e` | Same as Groth16 |
 
 ### Two ZK Programs
 
@@ -741,6 +760,9 @@ require(valid, "Invalid evidence proof");
 - [x] ERC-8004 Trustless Agent identity + reputation bootstrapping
 - [x] Security audit — 25 findings fixed (4 Critical, 6 High, 8 Medium, 7 Low)
 - [x] TypeScript AI judge agent (Node.js + Cloudflare Workers)
+- [x] Deterministic cross-chain deployment (CreateX CREATE3)
+- [x] Admin config setters (stake, fees, windows, USDC address)
+- [x] 86 tests with 92% line coverage
 - [ ] Tiered AI approach (regex → GPT-4)
 - [ ] Chainlink Functions integration
 - [ ] Proof of Humanity (Worldcoin) integration

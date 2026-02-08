@@ -4,6 +4,8 @@ TypeScript agent that autonomously participates in AIJudgeMarket as a judge. Use
 
 Runs as a **Node.js CLI** for local development or as a **Cloudflare Worker** with a 5-minute cron trigger for production.
 
+> **Note**: For the hackathon, OpenClaw bots are the primary judge agents. This TypeScript agent is for local testing with multiple judges. OpenClaw bots use the skill config at [departmentofpredictions.com/skill.md](https://departmentofpredictions.com/skill.md).
+
 ## How It Works
 
 1. Agent registers as a judge by staking USDC
@@ -23,14 +25,18 @@ Edit `.env`:
 
 ```
 PRIVATE_KEY=0x...              # Judge wallet private key
-CONTRACT_ADDRESS=0x...         # Deployed AIJudgeMarket proxy
+CONTRACT_ADDRESS=0xF7b9e8C9675d0Dbdb280A117fDf5E39fc6fb9E04  # Deployed AIJudgeMarket proxy
 LLM_API_KEY=sk-ant-...        # Claude or OpenAI API key
 LLM_PROVIDER=claude           # "claude" or "openai"
-RPC_URL=https://sepolia.base.org
-USDC_ADDRESS=0x036CbD53842c5426634e7929541eC2318f3dCF7e
+RPC_URL=https://gateway.tenderly.co/public/sepolia
+# USDC per chain:
+# Ethereum Sepolia: 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238
+# ARC Testnet:      0x2Ed9F0618e1E40A400DdB2D96C7a2834A3A1f964
+# Base Sepolia:     0x036CbD53842c5426634e7929541eC2318f3dCF7e
+USDC_ADDRESS=0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238
 ```
 
-The judge wallet needs Base Sepolia ETH (gas) and 1000+ USDC (stake).
+The judge wallet needs ETH for gas and 1+ USDC for stake (testnet).
 
 ## Node.js CLI
 
@@ -69,6 +75,20 @@ curl https://your-worker.workers.dev/process
 ## Running Multiple Judges
 
 Each judge needs its own wallet. Create separate `.env` files or deploy separate Workers with different `PRIVATE_KEY` values.
+
+## Deployed Contract
+
+The AIJudgeMarket proxy is deployed at the same address on all chains:
+
+```
+0xF7b9e8C9675d0Dbdb280A117fDf5E39fc6fb9E04
+```
+
+| Chain | RPC | Status |
+|-------|-----|--------|
+| Ethereum Sepolia | `https://gateway.tenderly.co/public/sepolia` | Active |
+| ARC Testnet | `https://rpc.testnet.arc.network` | Active |
+| Base Sepolia | `https://sepolia.base.org` | Planned |
 
 ## Project Structure
 
