@@ -321,6 +321,64 @@ contract AIJudgeMarket is
     }
 
     // ============================================================
+    // ADMIN CONFIGURATION
+    // ============================================================
+
+    event USDCAddressUpdated(address indexed oldAddress, address indexed newAddress);
+
+    function setUSDCAddress(address _usdc) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_usdc == address(0)) revert InvalidConfig();
+        MainStorage storage main = _getMainStorage();
+        address oldAddress = address(main.usdc);
+        main.usdc = IERC20(_usdc);
+        emit USDCAddressUpdated(oldAddress, _usdc);
+    }
+
+    function setMinJudgeStake(uint256 _amount) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        MainStorage storage main = _getMainStorage();
+        uint256 old = main.minJudgeStake;
+        main.minJudgeStake = _amount;
+        emit ConfigUpdated("minJudgeStake", old, _amount);
+    }
+
+    function setChallengeStake(uint256 _amount) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        MainStorage storage main = _getMainStorage();
+        uint256 old = main.challengeStake;
+        main.challengeStake = _amount;
+        emit ConfigUpdated("challengeStake", old, _amount);
+    }
+
+    function setChallengeWindow(uint256 _window) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        MainStorage storage main = _getMainStorage();
+        uint256 old = main.challengeWindow;
+        main.challengeWindow = _window;
+        emit ConfigUpdated("challengeWindow", old, _window);
+    }
+
+    function setCommitRevealWindow(uint256 _window) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        MainStorage storage main = _getMainStorage();
+        uint256 old = main.commitRevealWindow;
+        main.commitRevealWindow = _window;
+        emit ConfigUpdated("commitRevealWindow", old, _window);
+    }
+
+    function setProtocolFeeBasisPoints(uint256 _bps) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_bps > 10000) revert InvalidConfig();
+        MainStorage storage main = _getMainStorage();
+        uint256 old = main.protocolFeeBasisPoints;
+        main.protocolFeeBasisPoints = _bps;
+        emit ConfigUpdated("protocolFeeBasisPoints", old, _bps);
+    }
+
+    function setSlashPercentage(uint256 _pct) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (_pct > 10000) revert InvalidConfig();
+        MainStorage storage main = _getMainStorage();
+        uint256 old = main.slashPercentage;
+        main.slashPercentage = _pct;
+        emit ConfigUpdated("slashPercentage", old, _pct);
+    }
+
+    // ============================================================
     // JUDGE MANAGEMENT
     // ============================================================
 

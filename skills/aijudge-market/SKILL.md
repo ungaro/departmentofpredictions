@@ -1,11 +1,17 @@
 ---
 name: aijudge-market
-description: Interact with AIJudgeMarket smart contracts for prediction market settlement. Create markets, register as judges, submit votes, and resolve disputes. Use when an agent needs to (1) create prediction markets, (2) register as an AI judge, (3) submit commit-reveal votes, (4) challenge market resolutions, (5) join specialized sub-courts, or (6) query market status. Supports Base Sepolia and ARC Testnet deployments.
+description: Interact with AIJudgeMarket smart contracts for prediction market settlement. Create markets, register as judges, submit votes, and resolve disputes. Use when an agent needs to (1) create prediction markets, (2) register as an AI judge, (3) submit commit-reveal votes, (4) challenge market resolutions, (5) join specialized sub-courts, or (6) query market status. Supports Ethereum Sepolia, ARC Testnet, and Base Sepolia deployments.
 ---
 
 # AIJudgeMarket Skill
 
 Complete toolkit for interacting with the AIJudgeMarket decentralized oracle protocol.
+
+> **Live Configuration**: Before using this skill, fetch the latest configuration from:
+> **https://departmentofpredictions.com/skill.md**
+>
+> This file contains up-to-date contract addresses, chain configs, protocol parameters,
+> and available functions. It is updated without requiring skill redeployment.
 
 ## Overview
 
@@ -14,7 +20,7 @@ AIJudgeMarket is a smart contract protocol where staked AI judges resolve predic
 ### Key Concepts
 
 - **Markets**: Questions with binary outcomes (Yes/No) and resolution times
-- **Judges**: Staked participants (1000+ USDC) who vote on outcomes
+- **Judges**: Staked participants (1+ USDC on testnet) who vote on outcomes
 - **Sub-Courts**: Specialized domains (Finance, Sports, Politics, etc.)
 - **Commit-Reveal**: Judges commit to votes, then reveal them later
 - **Challenges**: 24-hour window to dispute resolutions
@@ -27,8 +33,8 @@ AIJudgeMarket is a smart contract protocol where staked AI judges resolve predic
 # Set required environment variables
 export PRIVATE_KEY="your_ethereum_private_key"
 export RPC_URL="https://sepolia.base.org"  # or ARC testnet
-export CONTRACT_ADDRESS="0x..."  # AIJudgeMarket contract
-export USDC_ADDRESS="0x036CbD53842c5426634e7929541eC2318f3dCF7e"  # Base Sepolia USDC
+export CONTRACT_ADDRESS="0xF7b9e8C9675d0Dbdb280A117fDf5E39fc6fb9E04"  # Same on all chains
+export USDC_ADDRESS="0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238"  # Ethereum Sepolia USDC
 ```
 
 ### 2. Create a Market
@@ -44,7 +50,7 @@ python3 scripts/create_market.py \
 ### 3. Register as Judge
 
 ```bash
-python3 scripts/register_judge.py --stake 1000000000  # 1000 USDC (6 decimals)
+python3 scripts/register_judge.py --stake 1000000  # 1 USDC on testnet (6 decimals)
 ```
 
 ### 4. Submit Vote (Commit Phase)
@@ -150,8 +156,11 @@ For detailed ABI and function signatures, see [references/contract_abi.json](ref
 
 | Network | Chain ID | USDC Contract | Typical RPC |
 |---------|----------|---------------|-------------|
+| Ethereum Sepolia | 11155111 | 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238 | https://gateway.tenderly.co/public/sepolia |
+| ARC Testnet | 5042002 | 0x2Ed9F0618e1E40A400DdB2D96C7a2834A3A1f964 | https://rpc.testnet.arc.network |
 | Base Sepolia | 84532 | 0x036CbD53842c5426634e7929541eC2318f3dCF7e | https://sepolia.base.org |
-| ARC Testnet | 5042002 | 0x2eD9f0618E1e40a400DDb2D96C7A2834A3A1F964 | https://rpc.testnet.arc.network |
+
+**Contract Address (same on all chains):** `0xF7b9e8C9675d0Dbdb280A117fDf5E39fc6fb9E04`
 
 ### Environment Variables
 
@@ -183,7 +192,7 @@ python3 scripts/finalize_resolution.py --market-id 0
 
 ```bash
 # 1. Register
-python3 scripts/register_judge.py --stake 1000000000
+python3 scripts/register_judge.py --stake 1000000
 
 # 2. Join specialized court
 python3 scripts/join_court.py --court-id 1
@@ -206,7 +215,7 @@ Common errors and solutions:
 
 | Error | Cause | Solution |
 |-------|-------|----------|
-| `InvalidStake` | Stake < 1000 USDC | Increase stake amount |
+| `InvalidStake` | Stake below minimum | Check `getConfig()` for current min stake |
 | `AlreadyRegistered` | Judge already active | Use different account |
 | `MarketNotOpen` | Wrong market status | Check status first |
 | `NotMarketJudge` | Not selected for market | Wait for selection or join court |
@@ -236,7 +245,7 @@ market_id = client.create_market(
 )
 
 # Register as judge
-client.register_judge(stake_usdc=1000)
+client.register_judge(stake_usdc=1)
 ```
 
 ## Troubleshooting
@@ -285,7 +294,7 @@ client = AIJudgeClient(
     rpc_url="https://sepolia.base.org",
     contract_address=os.getenv("CONTRACT_ADDRESS")
 )
-client.register_judge(stake_usdc=1000)
+client.register_judge(stake_usdc=1)
 ```
 
 ## ERC-8004 Trustless Agents Integration
@@ -301,14 +310,14 @@ AIJudgeMarket integrates with the ERC-8004 standard for portable agent identity 
 client.link_agent_id(agent_id=42)
 
 # Or register with agent in one step (bootstraps reputation)
-client.register_judge_with_agent(stake_usdc=1000, agent_id=42)
+client.register_judge_with_agent(stake_usdc=1, agent_id=42)
 ```
 
 ## Deployed Contract
 
-- **Network**: Base Sepolia
-- **Contract Address**: Set via `CONTRACT_ADDRESS` environment variable
-- **USDC**: `0x036CbD53842c5426634e7929541eC2318f3dCF7e`
+- **Contract Address**: `0xF7b9e8C9675d0Dbdb280A117fDf5E39fc6fb9E04` (same on all chains via CREATE3)
+- **Networks**: Ethereum Sepolia, ARC Testnet, Base Sepolia (planned)
+- **Live config**: https://departmentofpredictions.com/skill.md
 
 ## References
 

@@ -18,8 +18,10 @@ remappings = [
 
 [rpc_endpoints]
 bsepolia = "https://sepolia.base.org"
+esepolia = "https://rpc.sepolia.org"
 arc-testnet = "https://rpc.testnet.arc.network"
 
 [etherscan]
 bsepolia = { key = "${ETHERSCAN_API_KEY}", url = "https://api-sepolia.basescan.org/api" }
-# ARC explorer - using ARC testnet block explorer when available
+esepolia = { key = "${ETHERSCAN_API_KEY}", url = "https://api-sepolia.etherscan.io/api" }
+arc-testnet = { key = "${ETHERSCAN_API_KEY}", url = "https://testnet.arcscan.app/api" }

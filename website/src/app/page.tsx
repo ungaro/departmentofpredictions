@@ -134,7 +134,7 @@ function LiveStats() {
     { label: "Markets", value: ml ? "\u2014" : String(marketCount ?? "\u2014") },
     { label: "Judges", value: jl ? "\u2014" : String(judgesCount ?? "\u2014") },
     { label: "Courts", value: "8" },
-    { label: "Min Stake", value: "1,000 USDC" },
+    { label: "Min Stake", value: "1 USDC" },
   ];
 
   return (
@@ -303,6 +303,13 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-black">
+      {/* ── LIVE BANNER ── */}
+      <div className="relative z-50 bg-[hsl(43_100%_50%)] text-black text-center py-2 px-4">
+        <p className="text-xs sm:text-sm font-semibold tracking-wide">
+          Now live on Ethereum Sepolia and ARC Testnet
+          <span className="inline-block ml-2 w-1.5 h-1.5 rounded-full bg-green-600 animate-pulse" />
+        </p>
+      </div>
       {/* ── HERO (full viewport, video behind nav) ── */}
       <section className="relative h-screen min-h-[600px] overflow-hidden">
         {/* Video fills entire hero */}

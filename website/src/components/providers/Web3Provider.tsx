@@ -1,15 +1,18 @@
 "use client";
 
 import { WagmiProvider, createConfig, http } from "wagmi";
-import { baseSepolia } from "wagmi/chains";
+import { sepolia, baseSepolia } from "wagmi/chains";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ConnectKitProvider, getDefaultConfig } from "connectkit";
 import { ReactNode } from "react";
+import { arcTestnet } from "@/lib/contracts";
 
 const config = createConfig(
   getDefaultConfig({
-    chains: [baseSepolia],
+    chains: [sepolia, arcTestnet, baseSepolia],
     transports: {
+      [sepolia.id]: http("https://gateway.tenderly.co/public/sepolia"),
+      [arcTestnet.id]: http("https://rpc.testnet.arc.network"),
       [baseSepolia.id]: http("https://sepolia.base.org"),
     },
     walletConnectProjectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID || "",

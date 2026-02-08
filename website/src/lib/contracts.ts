@@ -1,9 +1,29 @@
-import { baseSepolia } from "wagmi/chains";
+import { baseSepolia, sepolia } from "wagmi/chains";
+import { defineChain } from "viem";
 
-export const CHAIN = baseSepolia;
+// ARC Testnet (custom chain, not in viem defaults)
+export const arcTestnet = defineChain({
+  id: 5042002,
+  name: "ARC Testnet",
+  nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
+  rpcUrls: {
+    default: { http: ["https://rpc.testnet.arc.network"] },
+  },
+  blockExplorers: {
+    default: { name: "ARC Explorer", url: "https://testnet.arcscan.app" },
+  },
+  testnet: true,
+});
 
-export const AIJUDGE_ADDRESS = (process.env.NEXT_PUBLIC_CONTRACT_ADDRESS ||
-  "0x0000000000000000000000000000000000000000") as `0x${string}`;
+// Supported chains
+export const SUPPORTED_CHAINS = [sepolia, arcTestnet, baseSepolia] as const;
+
+// Default chain
+export const CHAIN = sepolia;
+
+// Same address on all chains (deployed via CreateX CREATE3)
+export const AIJUDGE_ADDRESS =
+  "0xF7b9e8C9675d0Dbdb280A117fDf5E39fc6fb9E04" as `0x${string}`;
 
 export const AIJUDGE_ABI = [
   {

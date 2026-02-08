@@ -6,6 +6,7 @@ Core client library for interacting with AIJudgeMarket smart contracts.
 
 import os
 import json
+import urllib.request
 from typing import Optional, Dict, List, Any
 from dataclasses import dataclass
 from web3 import Web3
@@ -56,10 +57,17 @@ class AIJudgeClient:
         )
     """
     
-    # Default USDC addresses
+    # Default contract address (same on all chains via CREATE3)
+    DEFAULT_CONTRACT_ADDRESS = "0xF7b9e8C9675d0Dbdb280A117fDf5E39fc6fb9E04"
+
+    # Live skill config URL (fetch for latest addresses and parameters)
+    SKILL_CONFIG_URL = "https://departmentofpredictions.com/skill.md"
+
+    # Default USDC addresses per chain
     USDC_ADDRESSES = {
+        "eth-sepolia": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
         "base-sepolia": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
-        "arc-testnet": "0x2eD9f0618E1e40a400DDb2D96C7A2834A3A1F964"
+        "arc-testnet": "0x2Ed9F0618e1E40A400DdB2D96C7a2834A3A1f964"
     }
     
     def __init__(
@@ -98,7 +106,9 @@ class AIJudgeClient:
         else:
             # Auto-detect from chain ID
             chain_id = self.w3.eth.chain_id
-            if chain_id == 84532:  # Base Sepolia
+            if chain_id == 11155111:  # Ethereum Sepolia
+                self.usdc_address = self.USDC_ADDRESSES["eth-sepolia"]
+            elif chain_id == 84532:  # Base Sepolia
                 self.usdc_address = self.USDC_ADDRESSES["base-sepolia"]
             elif chain_id == 5042002:  # ARC Testnet
                 self.usdc_address = self.USDC_ADDRESSES["arc-testnet"]
@@ -113,6 +123,25 @@ class AIJudgeClient:
         ]
         self.usdc = self.w3.eth.contract(address=self.usdc_address, abi=usdc_abi)
     
+    @staticmethod
+    def fetch_live_config(url: Optional[str] = None) -> str:
+        """
+        Fetch the latest skill configuration from the remote URL.
+        Returns the raw markdown content. Agents should parse this for
+        up-to-date contract addresses, chain configs, and parameters.
+
+        Args:
+            url: Override URL (defaults to departmentofpredictions.com/skill.md)
+        """
+        config_url = url or AIJudgeClient.SKILL_CONFIG_URL
+        try:
+            req = urllib.request.Request(config_url, headers={"User-Agent": "AIJudgeClient/1.0"})
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                return resp.read().decode("utf-8")
+        except Exception as e:
+            print(f"Warning: Could not fetch live config from {config_url}: {e}")
+            return ""
+
     def _send_transaction(self, function, value: int = 0) -> str:
         """Send a transaction and return tx hash"""
         tx = function.build_transaction({

@@ -635,6 +635,474 @@ contract AIJudgeMarketTest is Test {
         market.linkAgentId(agentId2);
     }
 
+    // ================================================================
+    // TEST: Pause behavior
+    // ================================================================
+
+    function test_PauseBlocksRegistration() public {
+        vm.prank(admin);
+        market.pause();
+
+        vm.prank(judge1);
+        vm.expectRevert();
+        market.registerAsJudge(STAKE);
+    }
+
+    function test_PauseBlocksMarketCreation() public {
+        vm.prank(admin);
+        market.pause();
+
+        vm.prank(creator);
+        vm.expectRevert();
+        market.createMarket("test", block.timestamp + 1 days, 3, 0);
+    }
+
+    function test_UnpauseRestoresOperations() public {
+        vm.prank(admin);
+        market.pause();
+
+        vm.prank(admin);
+        market.unpause();
+
+        // Registration should work again
+        vm.prank(judge1);
+        market.registerAsJudge(STAKE);
+        assertEq(market.getActiveJudgesCount(), 1);
+    }
+
+    // ================================================================
+    // TEST: Withdraw protocol fees
+    // ================================================================
+
+    function test_WithdrawProtocolFees() public {
+        // Run a full lifecycle with slashing to generate fees
+        _registerThreeJudges();
+        uint256 marketId = _createMarket();
+        _selectJudges(marketId);
+
+        address[] memory selected = market.getSelectedJudges(marketId);
+        bytes32 s1 = keccak256("s1");
+        bytes32 s2 = keccak256("s2");
+        bytes32 s3 = keccak256("s3");
+
+        _commitVote(selected[0], marketId, AIJudgeMarket.Outcome.Yes, s1);
+        _commitVote(selected[1], marketId, AIJudgeMarket.Outcome.Yes, s2);
+        _commitVote(selected[2], marketId, AIJudgeMarket.Outcome.No, s3);
+
+        _revealVote(selected[0], marketId, AIJudgeMarket.Outcome.Yes, s1);
+        _revealVote(selected[1], marketId, AIJudgeMarket.Outcome.Yes, s2);
+        _revealVote(selected[2], marketId, AIJudgeMarket.Outcome.No, s3);
+
+        // Submit valid challenge and resolve with challenger winning (triggers slashing)
+        vm.prank(challenger);
+        market.challengeResolution(marketId, AIJudgeMarket.Outcome.No);
+
+        vm.prank(admin);
+        market.resolveChallenge(marketId, true); // challenger wins -> slashes incorrect judges
+
+        // Now there should be protocol fees from the slashing
+        // Withdraw them
+        address feeReceiver = address(99);
+        uint256 balBefore = usdc.balanceOf(feeReceiver);
+
+        // We need to figure out the amount - can't read totalProtocolFees directly
+        // but let's withdraw a small amount we know exists (1 USDC)
+        vm.prank(admin);
+        market.withdrawProtocolFees(feeReceiver, 1e6);
+
+        assertEq(usdc.balanceOf(feeReceiver), balBefore + 1e6);
+    }
+
+    function test_RevertWithdrawFeesToZeroAddress() public {
+        vm.prank(admin);
+        vm.expectRevert(AIJudgeMarket.InvalidConfig.selector);
+        market.withdrawProtocolFees(address(0), 1e6);
+    }
+
+    function test_RevertWithdrawFeesZeroAmount() public {
+        vm.prank(admin);
+        vm.expectRevert(AIJudgeMarket.InvalidConfig.selector);
+        market.withdrawProtocolFees(address(99), 0);
+    }
+
+    function test_RevertWithdrawFeesInsufficientBalance() public {
+        vm.prank(admin);
+        vm.expectRevert(AIJudgeMarket.InsufficientBalance.selector);
+        market.withdrawProtocolFees(address(99), 1e6);
+    }
+
+    function test_RevertWithdrawFeesNonAdmin() public {
+        vm.prank(judge1);
+        vm.expectRevert();
+        market.withdrawProtocolFees(address(99), 1e6);
+    }
+
+    // ================================================================
+    // TEST: Challenge + Resolve flow
+    // ================================================================
+
+    function test_ChallengeResolutionValid() public {
+        _registerThreeJudges();
+        uint256 marketId = _createMarket();
+        _selectJudges(marketId);
+
+        address[] memory selected = market.getSelectedJudges(marketId);
+        bytes32 s1 = keccak256("s1");
+        bytes32 s2 = keccak256("s2");
+        bytes32 s3 = keccak256("s3");
+
+        _commitVote(selected[0], marketId, AIJudgeMarket.Outcome.Yes, s1);
+        _commitVote(selected[1], marketId, AIJudgeMarket.Outcome.Yes, s2);
+        _commitVote(selected[2], marketId, AIJudgeMarket.Outcome.No, s3);
+
+        _revealVote(selected[0], marketId, AIJudgeMarket.Outcome.Yes, s1);
+        _revealVote(selected[1], marketId, AIJudgeMarket.Outcome.Yes, s2);
+        _revealVote(selected[2], marketId, AIJudgeMarket.Outcome.No, s3);
+
+        // Challenge within the window
+        vm.prank(challenger);
+        market.challengeResolution(marketId, AIJudgeMarket.Outcome.No);
+
+        AIJudgeMarket.Market memory m2 = market.getMarket(marketId);
+        assertEq(uint256(m2.status), uint256(AIJudgeMarket.MarketStatus.Challenged));
+
+        AIJudgeMarket.Challenge memory c = market.getChallenge(marketId);
+        assertEq(c.challenger, challenger);
+        assertEq(uint256(c.claimedOutcome), uint256(AIJudgeMarket.Outcome.No));
+        assertFalse(c.resolved);
+    }
+
+    function test_ResolveChallengerWins() public {
+        _registerThreeJudges();
+        uint256 marketId = _createMarket();
+        _selectJudges(marketId);
+
+        address[] memory selected = market.getSelectedJudges(marketId);
+        bytes32 s1 = keccak256("s1");
+        bytes32 s2 = keccak256("s2");
+        bytes32 s3 = keccak256("s3");
+
+        _commitVote(selected[0], marketId, AIJudgeMarket.Outcome.Yes, s1);
+        _commitVote(selected[1], marketId, AIJudgeMarket.Outcome.Yes, s2);
+        _commitVote(selected[2], marketId, AIJudgeMarket.Outcome.No, s3);
+
+        _revealVote(selected[0], marketId, AIJudgeMarket.Outcome.Yes, s1);
+        _revealVote(selected[1], marketId, AIJudgeMarket.Outcome.Yes, s2);
+        _revealVote(selected[2], marketId, AIJudgeMarket.Outcome.No, s3);
+
+        uint256 challengerBalBefore = usdc.balanceOf(challenger);
+
+        vm.prank(challenger);
+        market.challengeResolution(marketId, AIJudgeMarket.Outcome.No);
+
+        vm.prank(admin);
+        market.resolveChallenge(marketId, true);
+
+        AIJudgeMarket.Market memory m = market.getMarket(marketId);
+        assertEq(uint256(m.status), uint256(AIJudgeMarket.MarketStatus.Resolved));
+        assertEq(uint256(m.outcome), uint256(AIJudgeMarket.Outcome.No)); // Overturned
+
+        // Challenger gets stake back
+        assertEq(usdc.balanceOf(challenger), challengerBalBefore); // 1000 spent, 1000 returned
+    }
+
+    function test_ResolveChallengerLoses() public {
+        _registerThreeJudges();
+        uint256 marketId = _createMarket();
+        _selectJudges(marketId);
+
+        address[] memory selected = market.getSelectedJudges(marketId);
+        bytes32 s1 = keccak256("s1");
+        bytes32 s2 = keccak256("s2");
+        bytes32 s3 = keccak256("s3");
+
+        _commitVote(selected[0], marketId, AIJudgeMarket.Outcome.Yes, s1);
+        _commitVote(selected[1], marketId, AIJudgeMarket.Outcome.Yes, s2);
+        _commitVote(selected[2], marketId, AIJudgeMarket.Outcome.No, s3);
+
+        _revealVote(selected[0], marketId, AIJudgeMarket.Outcome.Yes, s1);
+        _revealVote(selected[1], marketId, AIJudgeMarket.Outcome.Yes, s2);
+        _revealVote(selected[2], marketId, AIJudgeMarket.Outcome.No, s3);
+
+        vm.prank(challenger);
+        market.challengeResolution(marketId, AIJudgeMarket.Outcome.No);
+
+        vm.prank(admin);
+        market.resolveChallenge(marketId, false); // challenger loses
+
+        AIJudgeMarket.Market memory m = market.getMarket(marketId);
+        assertEq(uint256(m.status), uint256(AIJudgeMarket.MarketStatus.Resolved));
+        assertEq(uint256(m.outcome), uint256(AIJudgeMarket.Outcome.Yes)); // Original stands
+    }
+
+    function test_RevertChallengeWithSameOutcome() public {
+        _registerThreeJudges();
+        uint256 marketId = _createMarket();
+        _selectJudges(marketId);
+
+        address[] memory selected = market.getSelectedJudges(marketId);
+        bytes32 s1 = keccak256("s1");
+        bytes32 s2 = keccak256("s2");
+        bytes32 s3 = keccak256("s3");
+
+        _commitVote(selected[0], marketId, AIJudgeMarket.Outcome.Yes, s1);
+        _commitVote(selected[1], marketId, AIJudgeMarket.Outcome.Yes, s2);
+        _commitVote(selected[2], marketId, AIJudgeMarket.Outcome.No, s3);
+
+        _revealVote(selected[0], marketId, AIJudgeMarket.Outcome.Yes, s1);
+        _revealVote(selected[1], marketId, AIJudgeMarket.Outcome.Yes, s2);
+        _revealVote(selected[2], marketId, AIJudgeMarket.Outcome.No, s3);
+
+        vm.prank(challenger);
+        vm.expectRevert(AIJudgeMarket.InvalidOutcome.selector);
+        market.challengeResolution(marketId, AIJudgeMarket.Outcome.Yes); // Same as resolution
+    }
+
+    function test_RevertChallengeWithNoneOutcome() public {
+        _registerThreeJudges();
+        uint256 marketId = _createMarket();
+        _selectJudges(marketId);
+
+        address[] memory selected = market.getSelectedJudges(marketId);
+        bytes32 s1 = keccak256("s1");
+        bytes32 s2 = keccak256("s2");
+        bytes32 s3 = keccak256("s3");
+
+        _commitVote(selected[0], marketId, AIJudgeMarket.Outcome.Yes, s1);
+        _commitVote(selected[1], marketId, AIJudgeMarket.Outcome.Yes, s2);
+        _commitVote(selected[2], marketId, AIJudgeMarket.Outcome.No, s3);
+
+        _revealVote(selected[0], marketId, AIJudgeMarket.Outcome.Yes, s1);
+        _revealVote(selected[1], marketId, AIJudgeMarket.Outcome.Yes, s2);
+        _revealVote(selected[2], marketId, AIJudgeMarket.Outcome.No, s3);
+
+        vm.prank(challenger);
+        vm.expectRevert(AIJudgeMarket.InvalidVoteOutcome.selector);
+        market.challengeResolution(marketId, AIJudgeMarket.Outcome.None);
+    }
+
+    function test_RevertDoubleChallenge() public {
+        _registerThreeJudges();
+        uint256 marketId = _createMarket();
+        _selectJudges(marketId);
+
+        address[] memory selected = market.getSelectedJudges(marketId);
+        bytes32 s1 = keccak256("s1");
+        bytes32 s2 = keccak256("s2");
+        bytes32 s3 = keccak256("s3");
+
+        _commitVote(selected[0], marketId, AIJudgeMarket.Outcome.Yes, s1);
+        _commitVote(selected[1], marketId, AIJudgeMarket.Outcome.Yes, s2);
+        _commitVote(selected[2], marketId, AIJudgeMarket.Outcome.No, s3);
+
+        _revealVote(selected[0], marketId, AIJudgeMarket.Outcome.Yes, s1);
+        _revealVote(selected[1], marketId, AIJudgeMarket.Outcome.Yes, s2);
+        _revealVote(selected[2], marketId, AIJudgeMarket.Outcome.No, s3);
+
+        vm.prank(challenger);
+        market.challengeResolution(marketId, AIJudgeMarket.Outcome.No);
+
+        // Second challenge should fail (status is now Challenged, not Resolving)
+        address challenger2 = address(20);
+        usdc.mint(challenger2, BIG_STAKE);
+        vm.prank(challenger2);
+        usdc.approve(address(market), type(uint256).max);
+
+        vm.prank(challenger2);
+        vm.expectRevert(AIJudgeMarket.NotInRevealPhase.selector);
+        market.challengeResolution(marketId, AIJudgeMarket.Outcome.No);
+    }
+
+    // ================================================================
+    // TEST: Slashing to suspension
+    // ================================================================
+
+    function test_SlashingViaChallenge() public {
+        // Register 3 judges + test slashing
+        _registerThreeJudges();
+        uint256 marketId = _createMarket();
+        _selectJudges(marketId);
+
+        address[] memory selected = market.getSelectedJudges(marketId);
+        bytes32 s1 = keccak256("s1");
+        bytes32 s2 = keccak256("s2");
+        bytes32 s3 = keccak256("s3");
+
+        // 2 vote Yes, 1 votes No -> majority = Yes
+        _commitVote(selected[0], marketId, AIJudgeMarket.Outcome.Yes, s1);
+        _commitVote(selected[1], marketId, AIJudgeMarket.Outcome.Yes, s2);
+        _commitVote(selected[2], marketId, AIJudgeMarket.Outcome.No, s3);
+
+        _revealVote(selected[0], marketId, AIJudgeMarket.Outcome.Yes, s1);
+        _revealVote(selected[1], marketId, AIJudgeMarket.Outcome.Yes, s2);
+        _revealVote(selected[2], marketId, AIJudgeMarket.Outcome.No, s3);
+
+        // Challenger wins -> outcome flips to No -> Yes voters get slashed
+        vm.prank(challenger);
+        market.challengeResolution(marketId, AIJudgeMarket.Outcome.No);
+
+        vm.prank(admin);
+        market.resolveChallenge(marketId, true);
+
+        // Yes voters should have reduced stake
+        AIJudgeMarket.Judge memory j0 = market.getJudge(selected[0]);
+        AIJudgeMarket.Judge memory j1 = market.getJudge(selected[1]);
+        AIJudgeMarket.Judge memory j2 = market.getJudge(selected[2]);
+
+        // selected[0] and [1] voted Yes (now wrong), should be slashed 50%
+        assertEq(j0.failedResolutions, 1);
+        assertEq(j1.failedResolutions, 1);
+        assertLt(j0.stake, STAKE); // Stake reduced
+
+        // selected[2] voted No (now correct), should be rewarded
+        assertEq(j2.successfulResolutions, 1);
+    }
+
+    // ================================================================
+    // TEST: Reveal Outcome.None
+    // ================================================================
+
+    function test_RevertRevealWithOutcomeNone() public {
+        _registerThreeJudges();
+        uint256 marketId = _createMarket();
+        _selectJudges(marketId);
+
+        address[] memory selected = market.getSelectedJudges(marketId);
+        bytes32 salt = keccak256("salt1");
+
+        // Commit with a hash that encodes Outcome.None
+        bytes32 commitHash = keccak256(abi.encodePacked(AIJudgeMarket.Outcome.None, salt));
+        vm.prank(selected[0]);
+        market.commitVote(marketId, commitHash);
+
+        vm.prank(selected[0]);
+        vm.expectRevert(AIJudgeMarket.InvalidVoteOutcome.selector);
+        market.revealVote(marketId, AIJudgeMarket.Outcome.None, salt, keccak256("e"), keccak256("r"));
+    }
+
+    // ================================================================
+    // TEST: Deregister with active markets
+    // ================================================================
+
+    function test_RevertDeregisterWithActiveMarkets() public {
+        _registerThreeJudges();
+        uint256 marketId = _createMarket();
+        _selectJudges(marketId);
+
+        address[] memory selected = market.getSelectedJudges(marketId);
+
+        // Judge has been assigned to an unresolved market — deregister should fail
+        vm.prank(selected[0]);
+        vm.expectRevert(AIJudgeMarket.HasActiveMarkets.selector);
+        market.deregisterAsJudge();
+    }
+
+    // ================================================================
+    // TEST: leaveCourt NotQualifiedForCourt
+    // ================================================================
+
+    function test_RevertLeaveCourtNotJoined() public {
+        _registerJudge(judge1);
+
+        vm.prank(judge1);
+        vm.expectRevert(AIJudgeMarket.NotQualifiedForCourt.selector);
+        market.leaveCourt(uint256(AIJudgeMarket.CourtCategory.Finance)); // Never joined Finance
+    }
+
+    // ================================================================
+    // TEST: Initialize validation
+    // ================================================================
+
+    function test_RevertInitializeZeroUSDC() public {
+        AIJudgeMarket impl = new AIJudgeMarket();
+        vm.expectRevert(AIJudgeMarket.InvalidConfig.selector);
+        new ERC1967Proxy(address(impl), abi.encodeWithSelector(AIJudgeMarket.initialize.selector, address(0), admin));
+    }
+
+    function test_RevertInitializeZeroAdmin() public {
+        AIJudgeMarket impl = new AIJudgeMarket();
+        vm.expectRevert(AIJudgeMarket.InvalidConfig.selector);
+        new ERC1967Proxy(
+            address(impl), abi.encodeWithSelector(AIJudgeMarket.initialize.selector, address(usdc), address(0))
+        );
+    }
+
+    // ================================================================
+    // TEST: Cancel market with active commitments
+    // ================================================================
+
+    function test_CancelMarketClearsCommitments() public {
+        _registerThreeJudges();
+        uint256 marketId = _createMarket();
+        _selectJudges(marketId);
+
+        address[] memory selected = market.getSelectedJudges(marketId);
+
+        // Judge commits a vote
+        bytes32 salt = keccak256("salt");
+        _commitVote(selected[0], marketId, AIJudgeMarket.Outcome.Yes, salt);
+
+        // Verify commitment exists
+        AIJudgeMarket.Judge memory jBefore = market.getJudge(selected[0]);
+        assertTrue(jBefore.latestCommitment != bytes32(0));
+
+        // Cancel market
+        vm.prank(admin);
+        market.cancelMarket(marketId);
+
+        // Commitment should be cleared
+        AIJudgeMarket.Judge memory jAfter = market.getJudge(selected[0]);
+        assertEq(jAfter.latestCommitment, bytes32(0));
+        assertEq(jAfter.commitmentBlock, 0);
+    }
+
+    // ================================================================
+    // TEST: Market with invalid court
+    // ================================================================
+
+    function test_RevertCreateMarketInvalidCourt() public {
+        vm.prank(creator);
+        vm.expectRevert(AIJudgeMarket.InvalidCourt.selector);
+        market.createMarket("test", block.timestamp + 1 days, 3, 99); // Court 99 doesn't exist
+    }
+
+    // ================================================================
+    // TEST: Even requiredJudges (prevents ties)
+    // ================================================================
+
+    function test_RevertEvenRequiredJudges() public {
+        vm.prank(creator);
+        vm.expectRevert(AIJudgeMarket.InvalidConfig.selector);
+        market.createMarket("test", block.timestamp + 1 days, 4, 0);
+    }
+
+    // ================================================================
+    // TEST: Finalize before challenge window closes
+    // ================================================================
+
+    function test_RevertFinalizeBeforeChallengeWindowCloses() public {
+        _registerThreeJudges();
+        uint256 marketId = _createMarket();
+        _selectJudges(marketId);
+
+        address[] memory selected = market.getSelectedJudges(marketId);
+        bytes32 s1 = keccak256("s1");
+        bytes32 s2 = keccak256("s2");
+        bytes32 s3 = keccak256("s3");
+
+        _commitVote(selected[0], marketId, AIJudgeMarket.Outcome.Yes, s1);
+        _commitVote(selected[1], marketId, AIJudgeMarket.Outcome.Yes, s2);
+        _commitVote(selected[2], marketId, AIJudgeMarket.Outcome.No, s3);
+
+        _revealVote(selected[0], marketId, AIJudgeMarket.Outcome.Yes, s1);
+        _revealVote(selected[1], marketId, AIJudgeMarket.Outcome.Yes, s2);
+        _revealVote(selected[2], marketId, AIJudgeMarket.Outcome.No, s3);
+
+        // Try to finalize before challenge window
+        vm.expectRevert(AIJudgeMarket.ChallengeWindowOpen.selector);
+        market.finalizeResolution(marketId);
+    }
+
     function test_ERC8004RegisterWithAgent() public {
         MockIdentityRegistry mockIdReg = new MockIdentityRegistry();
         MockReputationRegistry mockRepReg = new MockReputationRegistry();
