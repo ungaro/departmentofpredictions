@@ -5,7 +5,7 @@
 
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.20-blue)](https://soliditylang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-Foundry-orange)](https://book.getfoundry.sh/)
+[![Tests](https://img.shields.io/badge/Tests-41_passing-orange)](https://book.getfoundry.sh/)
 
 ---
 
@@ -81,8 +81,8 @@ stateDiagram-v2
     Incorrect --> Slashed: -50% Stake
     
     Slashed --> Suspended: 3+ Failures
-    Suspended --> [*]: Exit Protocol
-    
+    Suspended --> Active: Reinstated by Registrar
+
     Rewarded --> Active: Available for Next Round
     
     note right of Rewarded
@@ -183,7 +183,10 @@ flowchart LR
 | **Copycat Voting** | Commit-reveal: can't see others' votes before committing |
 | **Herd Behavior** | Minority bonus rewards independent thinking |
 | **Spam Challenges** | 1000 USDC challenge bond prevents frivolous disputes |
-| **Smart Contract Bugs** | UUPS upgradeable + emergency pause |
+| **Tie Votes** | requiredJudges must be odd (3, 5, 7, ...) |
+| **Ghost Judges** | Suspended judges removed from active list, selection verifies Active status |
+| **Stake Escape** | Judges can't deregister while assigned to unresolved markets |
+| **Smart Contract Bugs** | UUPS upgradeable + emergency pause + security audit (25 fixes) |
 
 ---
 
@@ -198,13 +201,19 @@ flowchart LR
 | **Commit-Reveal Voting** | Hash commitments prevent vote copying | ✅ |
 | **Random Judge Selection** | Block.prevrandao + timestamp seed | ✅ |
 | **Reputation Weighting** | Higher rep = higher selection probability | ✅ |
-| **50% Slashing** | Deters malicious voting | ✅ |
+| **50% Slashing** | Deters malicious voting, rewards distributed to correct judges | ✅ |
 | **Minority Bonus** | Rewards correct voters against majority | ✅ |
 | **Challenge Mechanism** | 24h window to dispute resolutions | ✅ |
 | **Emergency Pause** | Circuit breaker for critical issues | ✅ |
-| **Fee Withdrawal** | Admin can withdraw protocol fees | ✅ |
+| **Fee Withdrawal** | Admin can withdraw protocol fees (zero-address checked) | ✅ |
 | **IPFS Evidence** | Evidence/rationale hashes stored on-chain | ✅ |
 | **Sub-Courts** | 8 specialized courts (Finance, Sports, etc.) | ✅ |
+| **Judge Reinstatement** | Registrar can reinstate suspended judges | ✅ |
+| **Market Cancellation** | Manager can cancel stuck/tied markets | ✅ |
+| **Stats Views** | getMarketCount, getActiveJudgesCount, getCourtJudgesCount | ✅ |
+| **ERC-8004 Agents** | Trustless agent identity, reputation bootstrapping (feature-flagged) | ✅ |
+| **Odd Judge Requirement** | requiredJudges must be odd (prevents ties) | ✅ |
+| **Deregistration Guard** | Judges can't deregister with active markets | ✅ |
 
 ---
 
@@ -215,13 +224,23 @@ classDiagram
     class AIJudgeMarket {
         +initialize(usdc, admin)
         +registerAsJudge(stake)
+        +registerAsJudgeWithAgent(stake, agentId)
         +deregisterAsJudge()
-        +createMarket(question, time, judges)
+        +reinstateSuspendedJudge(judge)
+        +createMarket(question, time, judges, courtId)
+        +cancelMarket(marketId)
         +selectJudgesForMarket(marketId)
         +commitVote(marketId, commitHash)
         +revealVote(marketId, outcome, salt, evidence, rationale)
         +challengeResolution(marketId, claimedOutcome)
+        +resolveChallenge(marketId, challengerWon)
         +finalizeResolution(marketId)
+        +linkAgentId(agentId)
+        +unlinkAgentId()
+        +getMarketCount() view
+        +getActiveJudgesCount() view
+        +getCourtJudgesCount(courtId) view
+        +getConfig() view
         +pause()
         +unpause()
         +withdrawProtocolFees(to, amount)
@@ -229,9 +248,10 @@ classDiagram
         -_slashIncorrectJudges(marketId)
         -_distributeRewards(marketId)
         -_checkAndResolveMarket(marketId)
+        -_removeFromActiveList(judge)
         -_authorizeUpgrade(newImpl)
     }
-    
+
     class Judge {
         +uint256 stake
         +uint256 successfulResolutions
@@ -240,6 +260,7 @@ classDiagram
         +uint256 reputationScore
         +bytes32 latestCommitment
         +uint256[] courtIds
+        +uint256 agentId
     }
     
     class Market {
@@ -288,19 +309,23 @@ flowchart TB
         B[Market Count]
         C[Protocol Fees]
         D[Config: minStake, slash%, etc.]
+        D2[ERC-8004 Registries + Enabled Flag]
     end
-    
+
     subgraph MarketsStorage["Markets Storage Slot"]
         E[markets: mapping id => Market]
         F[votes: mapping id => judge => Vote]
         G[commitments: mapping id => judge => Commitment]
         H[challenges: mapping id => Challenge]
+        H2[selectedJudges: mapping id => address[]]
     end
-    
+
     subgraph JudgesStorage["Judges Storage Slot"]
         I[judges: mapping addr => Judge]
         J[activeJudgesList: address[]]
-        K[selectedJudges: mapping id => address[]]
+        J2[courtMembers: mapping courtId => address[]]
+        J3[judgeMarkets: mapping addr => uint256[]]
+        J4[agentIdToJudge: mapping agentId => address]
     end
     
     MainStorage --> MarketsStorage
@@ -409,19 +434,46 @@ uint256 marketId = market.createMarket(
 forge install
 
 # 2. Set environment variables
-export PRIVATE_KEY=your_key
-export USDC_BASE_SEPOLIA=0x036CbD53842c5426634e7929541eC2318f3dCF7e
+export PRIVATE_KEY=0xYOUR_PRIVATE_KEY
 
-# 3. Deploy implementation
-forge script script/Deploy.s.sol --rpc-url $BASE_SEPOLIA_RPC --broadcast
+# 3. Deploy (implementation + UUPS proxy in one script)
+forge script script/DeployV2.s.sol:DeployAIJudgeMarketV2 \
+  --rpc-url https://sepolia.base.org \
+  --broadcast \
+  --verify \
+  -vvv
 
-# 4. Deploy proxy
-forge script script/DeployProxy.s.sol --rpc-url $BASE_SEPOLIA_RPC --broadcast
+# Output:
+#   Implementation: 0x...
+#   Proxy (USE THIS ADDRESS): 0x...
+```
+
+### Post-Deployment Role Setup
+
+```bash
+export CONTRACT=0xYOUR_PROXY_ADDRESS
+
+# Grant MANAGER_ROLE (select judges, cancel markets)
+cast send $CONTRACT "grantRole(bytes32,address)" \
+  $(cast keccak "MANAGER_ROLE") YOUR_ADDRESS \
+  --private-key $PRIVATE_KEY --rpc-url https://sepolia.base.org
+
+# Grant JUDGE_REGISTRAR_ROLE (reinstate suspended judges)
+cast send $CONTRACT "grantRole(bytes32,address)" \
+  $(cast keccak "JUDGE_REGISTRAR_ROLE") YOUR_ADDRESS \
+  --private-key $PRIVATE_KEY --rpc-url https://sepolia.base.org
+
+# Grant CHALLENGE_RESOLVER_ROLE (resolve challenges)
+cast send $CONTRACT "grantRole(bytes32,address)" \
+  $(cast keccak "CHALLENGE_RESOLVER_ROLE") YOUR_ADDRESS \
+  --private-key $PRIVATE_KEY --rpc-url https://sepolia.base.org
 ```
 
 ---
 
 ## 🧪 Testing
+
+41 tests across 3 test suites (35 V2, 4 V1, 2 Counter).
 
 ```bash
 # Run all tests
@@ -432,7 +484,47 @@ forge test --gas-report
 
 # Run specific test
 forge test --match-test test_RegisterAsJudge -vv
+
+# Run only V2 tests
+forge test --match-contract AIJudgeMarketV2Test -vv
 ```
+
+### Test Coverage
+
+| Category | Tests | Description |
+|----------|-------|-------------|
+| Full lifecycle | 3 | Happy path, multi-court, ERC-8004 flow |
+| Judge operations | 7 | Register, deregister, reinstate, courts, agent linking |
+| Market operations | 4 | Create, cancel, stats views, config |
+| Access control | 6 | Role restrictions, unauthorized actions |
+| Edge cases | 6 | Double registration, invalid reveals, insufficient stake |
+| Challenge flow | 3 | Challenge, resolve, finalize |
+| Fuzz | 1 | Random market creation parameters |
+| Security audit | 5 | Suspension removal, deregistration guard, vote validation |
+
+---
+
+## 🛡️ Security Audit
+
+A comprehensive security audit was performed covering entry point analysis, vulnerability detection, and gas optimization. All findings have been fixed.
+
+### Findings Summary
+
+| Severity | Found | Fixed | Key Issues |
+|----------|-------|-------|------------|
+| Critical | 4 | 4 | Suspended judges in active list, selection not checking status, slashed funds stuck, rewards not distributed |
+| High | 6 | 6 | Duplicate judge on reinstatement, Outcome.None accepted in reveal, deregister with active markets |
+| Medium | 8 | 8 | Cancel doesn't clear commitments, challenge accepts None, resolveChallenge skips rewards |
+| Low | 7 | 7 | Zero-address checks, missing events, even requiredJudges allowed (ties) |
+
+### Key Fixes
+
+- **Slashing flow**: Slashed USDC (minus protocol fee) now routes to `judgeRewardPool` and is distributed to correct judges via USDC transfer
+- **Judge lifecycle**: Suspended judges are removed from `activeJudgesList`; `selectJudgesForMarket` verifies `Active` status; deregistration blocked if judge has unresolved markets
+- **Vote validation**: `revealVote` and `challengeResolution` reject `Outcome.None`
+- **Market cancellation**: Clears judge commitments for selected judges
+- **Tie prevention**: `requiredJudges` must be odd
+- **Court qualification**: Removed shortcut that qualified all judges for General court disputes regardless of actual court membership
 
 ---
 
@@ -445,10 +537,13 @@ interface IAIJudgeMarket {
     function createMarket(
         string calldata question,
         uint256 resolutionTime,
-        uint256 requiredJudges
+        uint256 requiredJudges,  // must be odd (3, 5, 7, ...)
+        uint256 courtId          // 0=General, 1=Finance, 2=Sports, etc.
     ) external returns (uint256 marketId);
-    
+
     function getMarket(uint256 marketId) external view returns (Market memory);
+    function getMarketCount() external view returns (uint256);
+    function getActiveJudgesCount() external view returns (uint256);
 }
 ```
 
@@ -456,10 +551,40 @@ interface IAIJudgeMarket {
 
 ```solidity
 interface IAIJudgeMarket {
+    function registerAsJudge(uint256 stakeAmount) external;
     function commitVote(uint256 marketId, bytes32 commitHash) external;
-    function revealVote(uint256 marketId, Outcome outcome, bytes32 salt, 
+    function revealVote(uint256 marketId, Outcome outcome, bytes32 salt,
         bytes32 evidenceHash, bytes32 rationaleHash) external;
 }
+
+// Commit hash computation (must match exactly):
+// keccak256(abi.encodePacked(uint8(outcome), bytes32(salt)))
+// outcome: 1 = Yes, 2 = No
+```
+
+### ERC-8004 Trustless Agents
+
+Feature-flagged integration with the [ERC-8004](https://eips.ethereum.org/EIPS/eip-8004) standard for on-chain agent identity and reputation.
+
+```solidity
+// Register as judge with an ERC-8004 agent identity
+// Bootstraps reputation from external registry (0-100 -> 0-10000 scale)
+market.registerAsJudgeWithAgent(stakeAmount, agentId);
+
+// Link/unlink agent identity for existing judges
+market.linkAgentId(agentId);
+market.unlinkAgentId();
+
+// Lookup
+market.getAgentId(judgeAddress);        // returns agentId
+market.getJudgeByAgentId(agentId);      // returns judge address
+market.isERC8004Enabled();              // check if feature is on
+```
+
+Admin controls:
+```solidity
+market.setERC8004Registries(identityRegistry, reputationRegistry, validationRegistry);
+market.setERC8004Enabled(true);
 ```
 
 ---
@@ -537,6 +662,24 @@ flowchart TB
    - Outputs: `outcome`, `confidence`, `evidence_hash`, `reasoning_hash`
    - Used for: Verifiable AI oracle decisions
 
+### Building ZK Programs
+
+Both programs compile to RISC-V ELF binaries using SP1 v5.2.4:
+
+```bash
+# Install SP1 toolchain
+curl -L https://sp1up.succinct.xyz | bash
+sp1up
+
+# Build evidence program
+cd contracts/zkvm/sp1-evidence
+~/.sp1/bin/cargo-prove prove build
+
+# Build AI analysis program
+cd ../sp1-ai-analysis
+~/.sp1/bin/cargo-prove prove build
+```
+
 ### Generating a Proof
 
 ```bash
@@ -592,12 +735,15 @@ require(valid, "Invalid evidence proof");
 
 ## 🔮 Future Roadmap
 
-- [x] ZK proofs for encrypted evidence ✅ **(SP1 + ETHproofs Aligned)**
+- [x] ZK proofs for encrypted evidence **(SP1 v5.2.4 + ETHproofs Aligned)**
+- [x] Sub-courts by category (sports, finance, etc.)
+- [x] Cross-chain settlement via CCTP **(via CircleX402 Skill)**
+- [x] ERC-8004 Trustless Agent identity + reputation bootstrapping
+- [x] Security audit — 25 findings fixed (4 Critical, 6 High, 8 Medium, 7 Low)
+- [x] TypeScript AI judge agent (Node.js + Cloudflare Workers)
 - [ ] Tiered AI approach (regex → GPT-4)
 - [ ] Chainlink Functions integration
-- [x] Sub-courts by category (sports, finance, etc.) ✅ **IMPLEMENTED**
 - [ ] Proof of Humanity (Worldcoin) integration
-- [x] Cross-chain settlement via CCTP ✅ **(via CircleX402 Skill)**
 
 ---
 
@@ -621,4 +767,5 @@ MIT License — see [LICENSE](LICENSE) for details.
 - Circle for the ARC testnet and hackathon opportunity
 - OpenZeppelin for upgradeable contract patterns
 - Foundry team for the excellent testing framework
+- Succinct Labs for SP1 ZK-VM (v5.2.4)
 - The prediction market community for inspiration

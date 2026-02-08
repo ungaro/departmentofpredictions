@@ -1,0 +1,16 @@
+name = "aijudge-agent"
+main = "src/worker.ts"
+compatibility_date = "2025-01-01"
+
+[triggers]
+crons = ["*/5 * * * *"]  # Check every 5 minutes
+
+[vars]
+CONTRACT_ADDRESS = ""
+RPC_URL = "https://sepolia.base.org"
+USDC_ADDRESS = "0x036CbD53842c5426634e7929541eC2318f3dCF7e"
+LLM_PROVIDER = "claude"
+
+# Secrets (set via `wrangler secret put`):
+# PRIVATE_KEY
+# LLM_API_KEY

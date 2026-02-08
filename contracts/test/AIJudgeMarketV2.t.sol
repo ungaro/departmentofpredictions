@@ -494,6 +494,8 @@ contract AIJudgeMarketV2Test is Test {
     function testFuzz_MarketCreation(uint256 resolutionDelay, uint256 requiredJudges) public {
         resolutionDelay = bound(resolutionDelay, 1 hours, 365 days);
         requiredJudges = bound(requiredJudges, 3, 21);
+        // Contract enforces odd requiredJudges to prevent ties
+        if (requiredJudges % 2 == 0) requiredJudges++;
 
         vm.prank(creator);
         uint256 marketId =

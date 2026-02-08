@@ -1,0 +1,22 @@
+{
+  "name": "aijudge-agent",
+  "version": "1.0.0",
+  "description": "AI Judge agent for AIJudgeMarket — runs on Node.js or Cloudflare Workers",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "npx tsx src/index.ts",
+    "worker:dev": "wrangler dev",
+    "worker:deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "viem": "^2.45.1"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250206.0",
+    "@types/node": "^25.2.1",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "wrangler": "^3.109.0"
+  }
+}

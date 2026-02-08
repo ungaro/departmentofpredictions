@@ -189,6 +189,7 @@ contract AIJudgeMarket is
     event SlashApplied(address indexed judge, uint256 amount, string reason);
     event CourtJoined(address indexed judge, uint256 indexed courtId);
     event CourtLeft(address indexed judge, uint256 indexed courtId);
+    event JudgeSuspended(address indexed judge);
     event MarketCreatedWithCourt(
         uint256 indexed marketId, string question, address creator, uint256 requiredJudges, uint256 courtId
     );
@@ -228,6 +229,8 @@ contract AIJudgeMarket is
     error NotQualifiedForCourt();
     error AlreadyInCourt();
     error CourtRequired();
+    error HasActiveMarkets();
+    error InvalidVoteOutcome();
 
     // ============================================================
     // STORAGE ACCESSORS
@@ -256,6 +259,8 @@ contract AIJudgeMarket is
     // ============================================================
 
     function initialize(address _usdc, address _admin) public initializer {
+        if (_usdc == address(0) || _admin == address(0)) revert InvalidConfig();
+
         __UUPSUpgradeable_init();
         __AccessControl_init();
         __ReentrancyGuard_init();
@@ -304,6 +309,7 @@ contract AIJudgeMarket is
 
     function withdrawProtocolFees(address to, uint256 amount) external onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant {
         MainStorage storage main = _getMainStorage();
+        if (to == address(0)) revert InvalidConfig();
         if (amount > main.totalProtocolFees) revert InsufficientBalance();
         if (amount == 0) revert InvalidConfig();
 
@@ -397,11 +403,20 @@ contract AIJudgeMarket is
 
     function deregisterAsJudge() external nonReentrant whenNotPaused {
         JudgesStorage storage judges = _getJudgesStorage();
+        MarketsStorage storage markets = _getMarketsStorage();
         MainStorage storage main = _getMainStorage();
 
         Judge storage judge = judges.judges[msg.sender];
         if (judge.status != JudgeStatus.Active) revert NotRegistered();
         if (judge.latestCommitment != bytes32(0)) revert InvalidStake();
+
+        // Prevent deregistration while assigned to unresolved markets
+        uint256[] storage assignedMarkets = judges.judgeMarkets[msg.sender];
+        for (uint256 i = 0; i < assignedMarkets.length; i++) {
+            if (markets.markets[assignedMarkets[i]].status != MarketStatus.Resolved) {
+                revert HasActiveMarkets();
+            }
+        }
 
         uint256 stakeToReturn = judge.stake;
         delete judges.judges[msg.sender];
@@ -439,7 +454,7 @@ contract AIJudgeMarket is
 
         if (bytes(question).length == 0 || bytes(question).length > 500) revert InvalidConfig();
         if (resolutionTime <= block.timestamp) revert InvalidResolutionTime();
-        if (requiredJudges < 3 || requiredJudges > 21) revert InvalidConfig();
+        if (requiredJudges < 3 || requiredJudges > 21 || requiredJudges % 2 == 0) revert InvalidConfig();
         if (courtId > uint256(CourtCategory.Science)) revert InvalidCourt();
 
         marketId = main.marketCount++;
@@ -482,8 +497,7 @@ contract AIJudgeMarket is
         if (courtId == uint256(CourtCategory.General)) return true;
 
         for (uint256 i = 0; i < judgeCourts.length; i++) {
-            // Judge qualifies if they're in the exact court OR in General court
-            if (judgeCourts[i] == courtId || judgeCourts[i] == uint256(CourtCategory.General)) {
+            if (judgeCourts[i] == courtId) {
                 return true;
             }
         }
@@ -512,6 +526,9 @@ contract AIJudgeMarket is
 
         for (uint256 i = 0; i < activeCount; i++) {
             address judgeAddr = activeList[i];
+
+            // Verify judge is still active (defense-in-depth)
+            if (judges.judges[judgeAddr].status != JudgeStatus.Active) continue;
 
             // Check if judge is qualified for this market's court
             if (_isJudgeQualifiedForCourt(judgeAddr, market.courtId)) {
@@ -629,6 +646,7 @@ contract AIJudgeMarket is
         if (commitment.commitHash == bytes32(0)) revert CommitNotFound();
         if (commitment.revealed) revert JudgeAlreadyVoted();
         if (block.timestamp > market.resolutionTime + main.commitRevealWindow * 2) revert RevealWindowClosed();
+        if (outcome == Outcome.None) revert InvalidVoteOutcome();
 
         bytes32 computedHash = keccak256(abi.encodePacked(outcome, salt));
         if (computedHash != commitment.commitHash) revert InvalidReveal();
@@ -699,6 +717,7 @@ contract AIJudgeMarket is
 
         if (market.status != MarketStatus.Resolving) revert NotInRevealPhase();
         if (block.timestamp > market.challengeDeadline) revert ChallengeWindowClosed();
+        if (claimedOutcome == Outcome.None) revert InvalidVoteOutcome();
         if (claimedOutcome == market.outcome) revert InvalidOutcome();
         if (markets.challenges[marketId].challenger != address(0)) revert AlreadyChallenged();
 
@@ -739,6 +758,8 @@ contract AIJudgeMarket is
         }
 
         market.status = MarketStatus.Resolved;
+
+        _distributeRewards(marketId);
 
         emit ChallengeResolved(marketId, challengerWon, challengerWon ? challenge.stake : 0);
     }
@@ -781,6 +802,8 @@ contract AIJudgeMarket is
 
                 if (judge.failedResolutions >= main.maxFailedResolutions) {
                     judge.status = JudgeStatus.Suspended;
+                    _removeFromActiveList(judgeAddr);
+                    emit JudgeSuspended(judgeAddr);
                 }
 
                 emit SlashApplied(judgeAddr, slashAmount, "Incorrect vote");
@@ -788,7 +811,9 @@ contract AIJudgeMarket is
         }
 
         if (totalSlash > 0) {
-            main.totalProtocolFees += (totalSlash * main.protocolFeeBasisPoints) / 10000;
+            uint256 protocolFee = (totalSlash * main.protocolFeeBasisPoints) / 10000;
+            main.totalProtocolFees += protocolFee;
+            market.judgeRewardPool += totalSlash - protocolFee;
         }
     }
 
@@ -821,7 +846,15 @@ contract AIJudgeMarket is
         // Determine minority outcome (the losing side)
         Outcome minorityOutcome = (yesVotes > noVotes) ? Outcome.No : Outcome.Yes;
 
-        // Count minority correct votes (correct judges who voted against majority trend)
+        // Calculate per-judge USDC reward from slashing pool
+        uint256 rewardPerJudge = 0;
+        if (market.judgeRewardPool > 0 && correctCount > 0) {
+            rewardPerJudge = market.judgeRewardPool / correctCount;
+        }
+
+        uint256 distributed = 0;
+
+        // Second pass: distribute rewards, reputation, and USDC
         for (uint256 i = 0; i < markets.selectedJudges[marketId].length; i++) {
             address judgeAddr = markets.selectedJudges[marketId][i];
             Vote memory vote = markets.votes[marketId][judgeAddr];
@@ -829,20 +862,32 @@ contract AIJudgeMarket is
             if (vote.outcome == market.outcome && vote.revealed) {
                 judges.judges[judgeAddr].successfulResolutions++;
 
+                // Transfer USDC reward from slashing pool
+                if (rewardPerJudge > 0) {
+                    if (!main.usdc.transfer(judgeAddr, rewardPerJudge)) revert TransferFailed();
+                    distributed += rewardPerJudge;
+                }
+
                 // Bonus for correct minority voters (voted against the majority trend)
                 if (market.outcome == minorityOutcome) {
                     minorityCorrectCount++;
                     // Increase reputation score for correct minority votes
-                    uint256 reputationBoost = main.minorityBonusBasisPoints / 100; // Convert basis points to points
+                    uint256 reputationBoost = main.minorityBonusBasisPoints / 100;
                     judges.judges[judgeAddr].reputationScore += reputationBoost;
                     if (judges.judges[judgeAddr].reputationScore > 10000) {
-                        judges.judges[judgeAddr].reputationScore = 10000; // Cap at 10000
+                        judges.judges[judgeAddr].reputationScore = 10000;
                     }
                 }
             }
         }
 
-        emit RewardsDistributed(marketId, market.judgeRewardPool, correctCount);
+        // Route any dust from integer division to protocol fees
+        if (market.judgeRewardPool > distributed) {
+            main.totalProtocolFees += market.judgeRewardPool - distributed;
+        }
+        market.judgeRewardPool = 0;
+
+        emit RewardsDistributed(marketId, distributed, correctCount);
     }
 
     // ============================================================
@@ -965,10 +1010,22 @@ contract AIJudgeMarket is
 
     function cancelMarket(uint256 marketId) external onlyRole(MANAGER_ROLE) {
         MarketsStorage storage markets = _getMarketsStorage();
+        JudgesStorage storage judges = _getJudgesStorage();
         Market storage market = markets.markets[marketId];
 
         if (market.status == MarketStatus.Resolved) revert MarketAlreadyResolved();
         if (market.creator == address(0)) revert MarketNotFound();
+
+        // Clear judge commitments so they aren't locked
+        for (uint256 i = 0; i < markets.selectedJudges[marketId].length; i++) {
+            address judgeAddr = markets.selectedJudges[marketId][i];
+            if (markets.commitments[marketId][judgeAddr].commitHash != bytes32(0)
+                && !markets.commitments[marketId][judgeAddr].revealed)
+            {
+                judges.judges[judgeAddr].latestCommitment = bytes32(0);
+                judges.judges[judgeAddr].commitmentBlock = 0;
+            }
+        }
 
         market.outcome = Outcome.None;
         market.status = MarketStatus.Resolved;
