@@ -1,11 +1,11 @@
-# AIJudgeMarket V2
+# AIJudgeMarket
 
 > **AI-Powered Prediction Market Settlement Protocol**  
 > Built for USDC Agentic Hackathon 2026
 
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.20-blue)](https://soliditylang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-41_passing-orange)](https://book.getfoundry.sh/)
+[![Tests](https://img.shields.io/badge/Tests-35_passing-orange)](https://book.getfoundry.sh/)
 
 ---
 
@@ -305,29 +305,29 @@ classDiagram
 ```mermaid
 flowchart TB
     subgraph MainStorage["Main Storage Slot"]
-        A[USDC Token]
-        B[Market Count]
-        C[Protocol Fees]
-        D[Config: minStake, slash%, etc.]
-        D2[ERC-8004 Registries + Enabled Flag]
+        A("USDC Token")
+        B("Market Count")
+        C("Protocol Fees")
+        D("Config: minStake, slash%, etc.")
+        D2("ERC-8004 Registries + Enabled Flag")
     end
 
     subgraph MarketsStorage["Markets Storage Slot"]
-        E[markets: mapping id => Market]
-        F[votes: mapping id => judge => Vote]
-        G[commitments: mapping id => judge => Commitment]
-        H[challenges: mapping id => Challenge]
-        H2[selectedJudges: mapping id => address[]]
+        E("markets: mapping id ==> Market")
+        F("votes: mapping id ==> judge ==> Vote")
+        G("commitments: mapping id ==> judge ==> Commitment")
+        H("challenges: mapping id ==> Challenge")
+        H2("selectedJudges: mapping id ==> addr list")
     end
 
     subgraph JudgesStorage["Judges Storage Slot"]
-        I[judges: mapping addr => Judge]
-        J[activeJudgesList: address[]]
-        J2[courtMembers: mapping courtId => address[]]
-        J3[judgeMarkets: mapping addr => uint256[]]
-        J4[agentIdToJudge: mapping agentId => address]
+        I("judges: mapping addr ==> Judge")
+        J("activeJudgesList: addr list")
+        J2("courtMembers: mapping courtId ==> addr list")
+        J3("judgeMarkets: mapping addr ==> id list")
+        J4("agentIdToJudge: mapping agentId ==> addr")
     end
-    
+
     MainStorage --> MarketsStorage
     MainStorage --> JudgesStorage
 ```
@@ -437,7 +437,7 @@ forge install
 export PRIVATE_KEY=0xYOUR_PRIVATE_KEY
 
 # 3. Deploy (implementation + UUPS proxy in one script)
-forge script script/DeployV2.s.sol:DeployAIJudgeMarketV2 \
+forge script script/Deploy.s.sol:DeployAIJudgeMarket \
   --rpc-url https://sepolia.base.org \
   --broadcast \
   --verify \
@@ -473,7 +473,7 @@ cast send $CONTRACT "grantRole(bytes32,address)" \
 
 ## 🧪 Testing
 
-41 tests across 3 test suites (35 V2, 4 V1, 2 Counter).
+35 tests in 1 test suite.
 
 ```bash
 # Run all tests
@@ -485,8 +485,8 @@ forge test --gas-report
 # Run specific test
 forge test --match-test test_RegisterAsJudge -vv
 
-# Run only V2 tests
-forge test --match-contract AIJudgeMarketV2Test -vv
+# Run by contract
+forge test --match-contract AIJudgeMarketTest -vv
 ```
 
 ### Test Coverage

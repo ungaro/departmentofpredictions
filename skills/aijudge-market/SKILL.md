@@ -312,7 +312,7 @@ client.register_judge_with_agent(stake_usdc=1000, agent_id=42)
 
 ## References
 
-- [Contract ABI](references/contract_abi.json) - Full ABI for AIJudgeMarketV2
-- [Contract Source](../../contracts/src/AIJudgeMarketV2.sol) - Solidity implementation
+- [Contract ABI](references/contract_abi.json) - Full ABI for AIJudgeMarket
+- [Contract Source](../../contracts/src/AIJudgeMarket.sol) - Solidity implementation
 - [ERC-8004 Interfaces](../../contracts/src/interfaces/IERC8004.sol) - Trustless Agents interfaces
 - [CircleX402 Skill](../circlex402-skill/SKILL.md) - Cross-chain USDC payment integration

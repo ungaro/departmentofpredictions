@@ -937,49 +937,9 @@ contract AIJudgeMarket is
         return _isJudgeQualifiedForCourt(judgeAddr, courtId);
     }
 
-    /**
-     * @notice Get the court name for a given court ID
-     * @param courtId The court ID
-     * @return name The human-readable court name
-     */
-    function getCourtName(uint256 courtId) external pure returns (string memory) {
-        if (courtId == uint256(CourtCategory.General)) return "General";
-        if (courtId == uint256(CourtCategory.Finance)) return "Finance";
-        if (courtId == uint256(CourtCategory.Sports)) return "Sports";
-        if (courtId == uint256(CourtCategory.Politics)) return "Politics";
-        if (courtId == uint256(CourtCategory.Technology)) return "Technology";
-        if (courtId == uint256(CourtCategory.Entertainment)) return "Entertainment";
-        if (courtId == uint256(CourtCategory.Crypto)) return "Crypto";
-        if (courtId == uint256(CourtCategory.Science)) return "Science";
-        return "Unknown";
-    }
-
-    /**
-     * @notice Get all available court IDs and names
-     * @return ids Array of court IDs
-     * @return names Array of court names
-     */
-    function getAllCourts() external pure returns (uint256[] memory ids, string[] memory names) {
-        ids = new uint256[](8);
-        names = new string[](8);
-
-        ids[0] = uint256(CourtCategory.General);
-        names[0] = "General";
-        ids[1] = uint256(CourtCategory.Finance);
-        names[1] = "Finance";
-        ids[2] = uint256(CourtCategory.Sports);
-        names[2] = "Sports";
-        ids[3] = uint256(CourtCategory.Politics);
-        names[3] = "Politics";
-        ids[4] = uint256(CourtCategory.Technology);
-        names[4] = "Technology";
-        ids[5] = uint256(CourtCategory.Entertainment);
-        names[5] = "Entertainment";
-        ids[6] = uint256(CourtCategory.Crypto);
-        names[6] = "Crypto";
-        ids[7] = uint256(CourtCategory.Science);
-        names[7] = "Science";
-    }
+    // Court names (off-chain reference — not stored on-chain to save bytecode):
+    // 0 = General, 1 = Finance, 2 = Sports, 3 = Politics,
+    // 4 = Technology, 5 = Entertainment, 6 = Crypto, 7 = Science
 
     // ============================================================
     // JUDGE REINSTATEMENT

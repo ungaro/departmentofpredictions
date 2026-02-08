@@ -350,10 +350,15 @@ class AIJudgeClient:
         """Get list of judges selected for a market"""
         return self._call(self.contract.functions.getSelectedJudges(market_id))
     
+    # Court ID -> name mapping (off-chain, not stored in contract)
+    COURT_NAMES = {
+        0: "General", 1: "Finance", 2: "Sports", 3: "Politics",
+        4: "Technology", 5: "Entertainment", 6: "Crypto", 7: "Science",
+    }
+
     def get_all_courts(self) -> List[Dict]:
         """Get list of all available courts"""
-        ids, names = self._call(self.contract.functions.getAllCourts())
-        return [{'id': int(i), 'name': n} for i, n in zip(ids, names)]
+        return [{'id': i, 'name': n} for i, n in self.COURT_NAMES.items()]
     
     def wait_for_transaction(self, tx_hash: str, timeout: int = 120) -> Dict:
         """Wait for transaction receipt"""

@@ -6,10 +6,21 @@
 [![Python](https://img.shields.io/badge/Python-3.9+-306998)](skills/)
 [![Next.js](https://img.shields.io/badge/Next.js-16-000000)](website/)
 [![Tailwind](https://img.shields.io/badge/Tailwind-4-38bdf8)](website/)
-[![Tests](https://img.shields.io/badge/Tests-41_passing-22c55e)](contracts/test/)
+[![Tests](https://img.shields.io/badge/Tests-35_passing-22c55e)](contracts/test/)
 [![License](https://img.shields.io/badge/License-MIT-a3a3a3)](LICENSE)
 
 **[departmentofpredictions.com](https://departmentofpredictions.com)**
+
+---
+
+## Table of Contents
+
+| Component | Description | Docs |
+|-----------|-------------|------|
+| [**contracts/**](contracts/) | AIJudgeMarket — UUPS-upgradeable prediction market oracle with commit-reveal voting, 8 sub-courts, 50% slashing, ERC-8004 agent identity, and SP1 ZK proofs. 35 Foundry tests. | [README](contracts/README.md) |
+| [**skills/aijudge-market/**](skills/aijudge-market/) | OpenClaw skill with 15 Python CLI tools wrapping every contract operation via Web3.py. | [SKILL.md](skills/aijudge-market/SKILL.md) |
+| [**agents/judge-agent/**](agents/judge-agent/) | TypeScript AI judge agent powered by Claude/OpenAI. Runs as Node.js CLI or Cloudflare Worker (5-min cron). Auto-commits and reveals votes. | [package.json](agents/judge-agent/package.json) |
+| [**website/**](website/) | Next.js 16 static-export dApp — editorial design, live contract stats, wallet connection via ConnectKit. | [README](website/README.md) |
 
 ---
 
@@ -21,55 +32,54 @@ Built for the **USDC Agentic Hackathon 2026** on [Moltbook](https://moltbook.com
 
 ### Tracks
 
-- **Smart Contract** — AIJudgeMarket V2 (UUPS proxy, EIP-7201, commit-reveal, sub-courts)
+- **Smart Contract** — AIJudgeMarket (UUPS proxy, EIP-7201, commit-reveal, sub-courts)
 - **Best OpenClaw Skill** — AIJudgeMarket + CircleX402 skills with full CLI tooling
 
 ---
 
 ## Architecture
 
-```
-                               ┌─────────────────────────────┐
-                               │      Base Sepolia Chain      │
-                               │                             │
-┌──────────────┐               │  ┌───────────────────────┐  │               ┌──────────────┐
-│              │  wagmi/viem   │  │   AIJudgeMarket V2    │  │  Web3.py      │              │
-│   Website    │──────────────▶│  │                       │  │◀──────────────│   OpenClaw   │
-│   Next.js 16 │               │  │  UUPS Proxy (EIP-1822)│  │               │   AI Agents  │
-│   React 19   │               │  │  EIP-7201 Storage     │  │               │   Python CLI │
-│              │               │  │  AccessControl        │  │               │              │
-└──────────────┘               │  └───────────┬───────────┘  │               └──────┬───────┘
-       │                       │              │              │                      │
-       │                       │  ┌───────────▼───────────┐  │                      │
-       │                       │  │    USDC (Circle)      │  │               ┌──────▼───────┐
-       │                       │  │    ERC-20 Token       │  │◀──────────────│  CircleX402  │
-       │                       │  └───────────────────────┘  │    CCTP       │  Cross-Chain │
-       │                       │                             │               │  USDC Router │
-       │                       └─────────────────────────────┘               └──────────────┘
-       │                                                                            │
-       │         ConnectKit                                              ┌───────────▼──────────┐
-       └──────────────────▶  Browser Wallet                              │  Ethereum / Arbitrum  │
-                                                                         │  Sepolia USDC         │
-                                                                         └──────────────────────┘
+```mermaid
+flowchart LR
+    subgraph Website["Website (Next.js 16)"]
+        W[React 19 + wagmi/viem]
+    end
+
+    subgraph Chain["Base Sepolia"]
+        Contract["AIJudgeMarket\nUUPS Proxy · EIP-7201\nAccessControl"]
+        USDC["USDC (Circle)\nERC-20"]
+        Contract --- USDC
+    end
+
+    subgraph Agents["AI Judge Agents"]
+        TS[TypeScript Agent\nNode.js / CF Worker]
+        PY[OpenClaw Skills\nPython CLI]
+    end
+
+    subgraph CrossChain["Cross-Chain"]
+        CX[CircleX402\nCCTP Router]
+        Other[Ethereum / Arbitrum\nSepolia USDC]
+        CX --- Other
+    end
+
+    W -->|wagmi/viem| Contract
+    TS -->|viem| Contract
+    PY -->|Web3.py| Contract
+    CX -->|CCTP| USDC
 ```
 
 ### Core Settlement Flow
 
-```
-  01 Create        02 Select         03 Commit           04 Reveal          05 Settle
-  ─────────       ──────────        ──────────          ──────────         ──────────
-  Market posted   Judges chosen     Sealed vote         Vote + evidence    Majority wins
-  to sub-court    by reputation     keccak256(          exposed on-chain   losers slashed
-                  + randomness      outcome, salt)                         50% of stake
-
-  ┌─────┐        ┌─────┐          ┌─────┐             ┌─────┐            ┌─────┐
-  │  ?  │───────▶│ 👤👤 │─────────▶│ #️⃣  │────────────▶│ 👁  │───────────▶│  ⚖  │
-  └─────┘        └─────┘          └─────┘             └─────┘            └─────┘
-                                                                            │
-                                                                     ┌──────▼──────┐
-                                                                     │  24h window  │
-                                                                     │  Challenge?  │
-                                                                     └─────────────┘
+```mermaid
+flowchart LR
+    A["01 Create\nMarket posted\nto sub-court"] --> B["02 Select\nJudges chosen\nby reputation\n+ randomness"]
+    B --> C["03 Commit\nSealed vote\nkeccak256(\noutcome, salt)"]
+    C --> D["04 Reveal\nVote + evidence\nexposed on-chain"]
+    D --> E["05 Settle\nMajority wins\nlosers slashed\n50% of stake"]
+    E --> F{"24h Challenge\nWindow"}
+    F -->|No challenge| G[Finalized]
+    F -->|Challenged| H[Resolve Challenge]
+    H --> G
 ```
 
 ---
@@ -81,16 +91,15 @@ aijudge/
 │
 ├── contracts/                         # Foundry project
 │   ├── src/
-│   │   ├── AIJudgeMarketV2.sol            # Main contract (1171 lines, UUPS upgradeable)
-│   │   ├── AIJudgeMarketV1.sol            # V1 reference implementation
+│   │   ├── AIJudgeMarket.sol               # Main contract (UUPS upgradeable)
 │   │   ├── SP1VerifierIntegration.sol     # ZK proof verifier (SP1 zkVM)
 │   │   └── interfaces/IERC8004.sol        # ERC-8004 Trustless Agents interfaces
-│   ├── script/DeployV2.s.sol              # UUPS proxy deployment script
-│   ├── test/AIJudgeMarketV2.t.sol         # 41 Foundry tests
+│   ├── script/Deploy.s.sol                # UUPS proxy deployment script
+│   ├── test/AIJudgeMarket.t.sol           # 35 Foundry tests
 │   ├── zkvm/                              # SP1 ZK-VM programs (Rust)
 │   │   ├── sp1-evidence/                      # Evidence commitment proofs
 │   │   └── sp1-ai-analysis/                   # AI inference proofs
-│   └── README.md                          # Contract-specific docs
+│   └── README.md
 │
 ├── skills/                            # OpenClaw skills
 │   ├── aijudge-market/                    # AIJudgeMarket skill
@@ -101,21 +110,25 @@ aijudge/
 │       ├── SKILL.md                           # Skill manifest
 │       └── main.py                            # CCTP + x402 client
 │
+├── agents/                            # AI judge agents
+│   └── judge-agent/                       # TypeScript agent
+│       ├── src/judge.ts                       # Core AIJudge class
+│       ├── src/index.ts                       # Node.js CLI entry point
+│       ├── src/worker.ts                      # Cloudflare Worker entry point
+│       └── wrangler.toml                      # CF Worker config (5-min cron)
+│
 ├── website/                           # Next.js 16 dApp
 │   ├── src/app/                           # App Router pages
-│   │   ├── page.tsx                           # Homepage (hero video, three.js particles)
-│   │   ├── markets/                           # Market listing + filtering
+│   │   ├── page.tsx                           # Homepage
+│   │   ├── markets/                           # Market listing
 │   │   ├── create/                            # Market creation form
 │   │   ├── judge/                             # Judge registration
 │   │   └── about/                             # Thesis + podcast references
 │   ├── src/lib/                           # Contract config, wagmi hooks
 │   ├── src/components/                    # ParticleField, Header, Footer
-│   └── README.md                          # Website-specific docs
+│   └── README.md
 │
-├── CLAUDE.md                          # AI assistant project context
-├── MOLTBOOK_SUBMISSION.md             # Hackathon submission draft
-├── PODCAST_INSIGHTS.md                # Bell Curve + ZK podcast analysis
-├── DEPLOYMENT_GUIDE.md                # Deployment instructions
+├── DEPLOYMENT.md                      # Deployment + judge setup instructions
 └── README.md                          # ← You are here
 ```
 
@@ -142,7 +155,7 @@ cd contracts && forge install && cd ..
 # Compile contracts (requires via_ir)
 cd contracts && forge build
 
-# Run all 41 tests
+# Run all 35 tests
 forge test -vv
 
 # Build website
@@ -153,7 +166,7 @@ cd ../website && pnpm install && pnpm build --webpack
 
 ## Smart Contract
 
-**File:** [`contracts/src/AIJudgeMarketV2.sol`](contracts/src/AIJudgeMarketV2.sol) (1171 lines)
+**File:** [`contracts/src/AIJudgeMarket.sol`](contracts/src/AIJudgeMarket.sol)
 
 UUPS-upgradeable (EIP-1822) prediction market oracle with EIP-7201 namespaced storage.
 
@@ -188,12 +201,12 @@ UUPS-upgradeable (EIP-1822) prediction market oracle with EIP-7201 namespaced st
 
 ```bash
 cd contracts
-forge script script/DeployV2.s.sol:DeployAIJudgeMarketV2 \
+forge script script/Deploy.s.sol:DeployAIJudgeMarket \
   --rpc-url https://sepolia.base.org \
   --broadcast --verify
 ```
 
-> See [`DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md) for full deployment instructions.
+> See [`DEPLOYMENT.md`](DEPLOYMENT.md) for full deployment and judge agent setup instructions.
 
 ---
 
@@ -260,7 +273,7 @@ Next.js 16 static-export dApp with editorial design.
 
 ## Testing
 
-41 Foundry tests covering the full V2 contract:
+35 Foundry tests:
 
 | Category | Tests | Coverage |
 |----------|-------|----------|
@@ -309,14 +322,12 @@ NEXT_PUBLIC_WC_PROJECT_ID=...        # WalletConnect project ID
 | Document | Description |
 |----------|-------------|
 | [`README.md`](README.md) | This file — project overview |
-| [`CLAUDE.md`](CLAUDE.md) | AI assistant context and project conventions |
-| [`MOLTBOOK_SUBMISSION.md`](MOLTBOOK_SUBMISSION.md) | Hackathon submission post |
-| [`DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md) | Step-by-step deployment instructions |
-| [`PODCAST_INSIGHTS.md`](PODCAST_INSIGHTS.md) | Bell Curve + ZK podcast analysis |
-| [`contracts/README.md`](contracts/README.md) | Contract-specific documentation |
-| [`website/README.md`](website/README.md) | Website setup and development |
+| [`DEPLOYMENT.md`](DEPLOYMENT.md) | Deployment, role setup, and judge agent instructions |
+| [`contracts/README.md`](contracts/README.md) | Contract architecture, security audit, sub-courts, ZK integration |
+| [`agents/judge-agent/`](agents/judge-agent/) | TypeScript AI judge agent (Node.js CLI + Cloudflare Worker) |
 | [`skills/aijudge-market/SKILL.md`](skills/aijudge-market/SKILL.md) | AIJudgeMarket skill manifest |
 | [`skills/circlex402-skill/SKILL.md`](skills/circlex402-skill/SKILL.md) | CircleX402 skill manifest |
+| [`website/README.md`](website/README.md) | Website setup and development |
 
 ---
 
