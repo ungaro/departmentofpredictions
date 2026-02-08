@@ -318,7 +318,7 @@ forge test --match-test testFullLifecycle  # Single test
 
 | Network | RPC | USDC | Status |
 |---------|-----|------|--------|
-| Ethereum Sepolia | `https://gateway.tenderly.co/public/sepolia` | `0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238` | Active |
+| Ethereum Sepolia | `https://sepolia.gateway.tenderly.co` | `0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238` | Active |
 | ARC Testnet | `https://rpc.testnet.arc.network` | `0x2Ed9F0618e1E40A400DdB2D96C7a2834A3A1f964` | Active |
 | Base Sepolia | `https://sepolia.base.org` | `0x036CbD53842c5426634e7929541eC2318f3dCF7e` | Planned |
 | Arbitrum Sepolia | Default | `0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d` | &mdash; |

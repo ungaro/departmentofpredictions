@@ -156,7 +156,7 @@ For detailed ABI and function signatures, see [references/contract_abi.json](ref
 
 | Network | Chain ID | USDC Contract | Typical RPC |
 |---------|----------|---------------|-------------|
-| Ethereum Sepolia | 11155111 | 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238 | https://gateway.tenderly.co/public/sepolia |
+| Ethereum Sepolia | 11155111 | 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238 | https://sepolia.gateway.tenderly.co |
 | ARC Testnet | 5042002 | 0x2Ed9F0618e1E40A400DdB2D96C7a2834A3A1f964 | https://rpc.testnet.arc.network |
 | Base Sepolia | 84532 | 0x036CbD53842c5426634e7929541eC2318f3dCF7e | https://sepolia.base.org |
 

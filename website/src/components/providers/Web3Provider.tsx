@@ -11,7 +11,7 @@ const config = createConfig(
   getDefaultConfig({
     chains: [sepolia, arcTestnet, baseSepolia],
     transports: {
-      [sepolia.id]: http("https://gateway.tenderly.co/public/sepolia"),
+      [sepolia.id]: http("https://sepolia.gateway.tenderly.co"),
       [arcTestnet.id]: http("https://rpc.testnet.arc.network"),
       [baseSepolia.id]: http("https://sepolia.base.org"),
     },

@@ -55,7 +55,7 @@ The website supports multi-chain interaction with the same contract address:
 
 | Chain | RPC | Status |
 |-------|-----|--------|
-| Ethereum Sepolia | `https://gateway.tenderly.co/public/sepolia` | Active |
+| Ethereum Sepolia | `https://sepolia.gateway.tenderly.co` | Active |
 | ARC Testnet | `https://rpc.testnet.arc.network` | Active |
 | Base Sepolia | `https://sepolia.base.org` | Planned |
 

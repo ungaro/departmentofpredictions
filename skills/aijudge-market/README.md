@@ -179,7 +179,7 @@ python3 reveal_vote.py --market-id 0 --outcome yes --salt "my_secret"
 ### Ethereum Sepolia
 - Chain ID: 11155111
 - USDC: 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238
-- RPC: https://gateway.tenderly.co/public/sepolia
+- RPC: https://sepolia.gateway.tenderly.co
 
 ## Deployed Contract
 

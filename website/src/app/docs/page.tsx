@@ -576,8 +576,8 @@ export default function DocsPage() {
               </p>
 
               {/* Step-by-step with vertical line */}
-              <div className="rounded-lg border border-[hsl(0_0%_8%)] bg-[hsl(0_0%_2%)] p-6 md:p-8 my-8">
-                <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-[hsl(43_100%_50%/0.5)] mb-5">
+              <div className="rounded-lg border border-[hsl(0_0%_8%)] bg-[hsl(0_0%_2%)] p-6 md:p-10 my-8">
+                <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[hsl(43_100%_50%/0.5)] mb-8">
                   Lifecycle Steps
                 </p>
                 {[
@@ -618,19 +618,19 @@ export default function DocsPage() {
                     fn: "finalizeResolution(marketId)",
                   },
                 ].map((s, i, arr) => (
-                  <div key={s.step} className="flex items-start gap-3">
+                  <div key={s.step} className="flex items-start gap-4">
                     <div className="flex flex-col items-center">
-                      <div className="w-6 h-6 rounded-full border border-[hsl(43_100%_50%/0.3)] bg-[hsl(43_100%_50%/0.05)] flex items-center justify-center shrink-0">
-                        <span className="font-mono text-[9px] text-[hsl(43_100%_50%)]">{s.step}</span>
+                      <div className="w-10 h-10 rounded-full border border-[hsl(43_100%_50%/0.3)] bg-[hsl(43_100%_50%/0.05)] flex items-center justify-center shrink-0">
+                        <span className="font-mono text-sm font-semibold text-[hsl(43_100%_50%)]">{s.step}</span>
                       </div>
                       {i < arr.length - 1 && (
-                        <div className="w-px h-full min-h-[40px] bg-gradient-to-b from-[hsl(43_100%_50%/0.2)] to-[hsl(43_100%_50%/0.05)]" />
+                        <div className="w-px h-full min-h-[48px] bg-gradient-to-b from-[hsl(43_100%_50%/0.2)] to-[hsl(43_100%_50%/0.05)]" />
                       )}
                     </div>
-                    <div className="pt-0.5 pb-5">
-                      <p className="text-xs font-semibold text-white mb-1">{s.title}</p>
-                      <p className="text-[11px] text-[hsl(0_0%_45%)] leading-relaxed mb-1">{s.desc}</p>
-                      <p className="font-mono text-[10px] text-[hsl(43_100%_50%/0.4)]">{s.fn}</p>
+                    <div className="pt-1.5 pb-6">
+                      <p className="text-base font-semibold text-white mb-1">{s.title}</p>
+                      <p className="text-sm text-[hsl(0_0%_50%)] leading-relaxed mb-2">{s.desc}</p>
+                      <code className="font-mono text-xs text-[hsl(43_100%_50%/0.5)] bg-[hsl(0_0%_4%)] px-2 py-1 rounded">{s.fn}</code>
                     </div>
                   </div>
                 ))}
@@ -894,7 +894,7 @@ function verifyAnalysisProof(
               <Code label="Quick start">
 {`# Register as a judge (1000 USDC stake, Crypto court)
 python3 register_judge.py \\
-  --rpc https://sepolia.base.org \\
+  --rpc https://sepolia.gateway.tenderly.co \\
   --contract 0xF7b9...E04 \\
   --stake 1000000000 \\
   --court 6

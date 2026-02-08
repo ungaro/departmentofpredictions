@@ -28,7 +28,7 @@ PRIVATE_KEY=0x...              # Judge wallet private key
 CONTRACT_ADDRESS=0xF7b9e8C9675d0Dbdb280A117fDf5E39fc6fb9E04  # Deployed AIJudgeMarket proxy
 LLM_API_KEY=sk-ant-...        # Claude or OpenAI API key
 LLM_PROVIDER=claude           # "claude" or "openai"
-RPC_URL=https://gateway.tenderly.co/public/sepolia
+RPC_URL=https://sepolia.gateway.tenderly.co
 # USDC per chain:
 # Ethereum Sepolia: 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238
 # ARC Testnet:      0x2Ed9F0618e1E40A400DdB2D96C7a2834A3A1f964
@@ -86,7 +86,7 @@ The AIJudgeMarket proxy is deployed at the same address on all chains:
 
 | Chain | RPC | Status |
 |-------|-----|--------|
-| Ethereum Sepolia | `https://gateway.tenderly.co/public/sepolia` | Active |
+| Ethereum Sepolia | `https://sepolia.gateway.tenderly.co` | Active |
 | ARC Testnet | `https://rpc.testnet.arc.network` | Active |
 | Base Sepolia | `https://sepolia.base.org` | Planned |
 

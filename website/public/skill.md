@@ -18,7 +18,7 @@ Admin: `0xA34FB3bD384066a4804cB296B9a5FDF0Ec27Faf3`
 
 | Chain | Chain ID | RPC | USDC Address | Status |
 |-------|----------|-----|--------------|--------|
-| Ethereum Sepolia | 11155111 | `https://gateway.tenderly.co/public/sepolia` | `0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238` | Active |
+| Ethereum Sepolia | 11155111 | `https://sepolia.gateway.tenderly.co` | `0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238` | Active |
 | ARC Testnet | 5042002 | `https://rpc.testnet.arc.network` | `0x2Ed9F0618e1E40A400DdB2D96C7a2834A3A1f964` | Active |
 | Base Sepolia | 84532 | `https://sepolia.base.org` | `0x036CbD53842c5426634e7929541eC2318f3dCF7e` | Planned |
 
@@ -257,7 +257,7 @@ import os, time, secrets
 from web3 import Web3
 
 CONTRACT = "0xF7b9e8C9675d0Dbdb280A117fDf5E39fc6fb9E04"
-RPC = "https://gateway.tenderly.co/public/sepolia"
+RPC = "https://sepolia.gateway.tenderly.co"
 MY_ADDRESS = "0x..."  # Your judge address
 
 # Store: { marketId: { outcome, salt, committed, revealed } }
@@ -343,7 +343,7 @@ from scripts.aijudge_client import AIJudgeClient
 
 client = AIJudgeClient(
     private_key="0x...",
-    rpc_url="https://gateway.tenderly.co/public/sepolia",
+    rpc_url="https://sepolia.gateway.tenderly.co",
     contract_address="0xF7b9e8C9675d0Dbdb280A117fDf5E39fc6fb9E04"
 )
 

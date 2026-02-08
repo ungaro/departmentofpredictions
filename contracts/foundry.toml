@@ -18,7 +18,7 @@ remappings = [
 
 [rpc_endpoints]
 bsepolia = "https://sepolia.base.org"
-esepolia = "https://rpc.sepolia.org"
+esepolia = "https://sepolia.gateway.tenderly.co"
 arc-testnet = "https://rpc.testnet.arc.network"
 
 [etherscan]
