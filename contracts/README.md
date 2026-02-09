@@ -149,27 +149,27 @@ sequenceDiagram
 ```mermaid
 flowchart LR
     subgraph Layer1["Economic Security"]
-        A[1 USDC Stake (testnet)]
-        B[50% Slashing]
+        A["1 USDC Stake (testnet)"]
+        B["50% Slashing"]
     end
-    
+
     subgraph Layer2["Game Theory"]
-        C[Commit-Reveal]
-        D[Minority Bonus]
+        C["Commit-Reveal"]
+        D["Minority Bonus"]
     end
-    
+
     subgraph Layer3["Mechanism Design"]
-        E[Random Selection]
-        F[Reputation Weighting]
+        E["Random Selection"]
+        F["Reputation Weighting"]
     end
-    
+
     subgraph Layer4["Governance"]
-        G[Challenge Window]
-        H[Emergency Pause]
+        G["Challenge Window"]
+        H["Emergency Pause"]
     end
-    
+
     Layer1 --> Layer2 --> Layer3 --> Layer4
-    
+
     style Layer1 fill:#ffcdd2
     style Layer2 fill:#fff9c4
     style Layer3 fill:#c8e6c9
