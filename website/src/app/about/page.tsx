@@ -649,7 +649,7 @@ export default function AboutPage() {
             </p>
             <div className="flex justify-center gap-3">
               <a
-                href="https://github.com/ungaro/aijudge"
+                href="https://github.com/ungaro/departmentofpredictions"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-4 py-2 text-xs font-mono rounded border border-[hsl(0_0%_10%)] text-[hsl(0_0%_50%)] hover:border-[hsl(43_100%_50%/0.4)] hover:text-[hsl(43_100%_50%)] transition-colors"

@@ -43,7 +43,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ungaro/aijudge-ecosystem"
+    "url": "https://github.com/ungaro/departmentofpredictions"
   },
   "engines": {
     "node": ">=18.0.0",

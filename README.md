@@ -149,7 +149,7 @@ pip install web3 eth-account eth-abi
 
 ```bash
 # Clone and install
-git clone https://github.com/ungaro/aijudge.git && cd aijudge
+git clone https://github.com/ungaro/departmentofpredictions.git && cd departmentofpredictions
 pnpm install
 cd contracts && forge install && cd ..
 

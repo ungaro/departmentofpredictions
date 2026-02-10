@@ -81,7 +81,7 @@ export function Footer() {
                   departmentofpredictions.com
                 </a>
                 <a
-                  href="https://github.com/ungaro/aijudge-ecosystem"
+                  href="https://github.com/ungaro/departmentofpredictions"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-[hsl(0_0%_45%)] hover:text-[hsl(43_100%_50%)] transition-colors"
